@@ -3,6 +3,7 @@ package org.cleancoders.web;
 import jakarta.ws.rs.core.Application;
 import org.cleancoders.web.binder.AppBinder;
 import org.cleancoders.web.filter.CorsFilter;
+import org.cleancoders.web.resource.AuthResource;
 import org.cleancoders.web.resource.HealthResource;
 
 import java.util.HashSet;
@@ -20,6 +21,7 @@ public class AppConfig extends Application {
         Set<Class<?>> classes = new HashSet<>();
         // Resources
         classes.add(HealthResource.class);
+        classes.add(AuthResource.class);
         // Providers / Filters
         classes.add(CorsFilter.class);
         // HK2 Binder (must be registered as a class so Jersey discovers it)

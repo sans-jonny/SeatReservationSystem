@@ -1,5 +1,14 @@
 package org.cleancoders.web.binder;
 
+import jakarta.inject.Singleton;
+import org.cleancoders.infrastructure.persistence.InMemoryUserRepo;
+import org.cleancoders.infrastructure.security.BCryptPasswordEncoder;
+import org.cleancoders.infrastructure.security.JjwtTokenService;
+import org.cleancoders.userandauth.outbound.PasswordEncoder;
+import org.cleancoders.userandauth.outbound.TokenService;
+import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.web.presenter.WebApiAuthPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 /**
@@ -8,15 +17,25 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
  * to their corresponding interfaces defined in business modules.
  *
  * Binding rules:
- * - bind(Implementation.class).to(Interface.class);    — create new instance per injection
- * - bind(Implementation.class).to(Interface.class).in(Singleton.class); — singleton
+ * - bind(Implementation.class).to(Interface.class); — create new instance per injection (PerLookup)
+ * - bind(instance).to(Contract.class); — share the same instance across contracts
  */
 public class AppBinder extends AbstractBinder {
 
     @Override
     protected void configure() {
-        // === UserAndAuth ===
-        // bind(InMemoryUserRepo.class).to(UserRepository.class);
+        // === UserAndAuth UseCases ===
+        bind(LoginUseCase.class).to(LoginUseCase.class);
+
+        // === Presenters (instance binding: LoginUseCase and AuthResource share same ThreadLocal) ===
+        WebApiAuthPresenter presenterInstance = new WebApiAuthPresenter();
+        bind(presenterInstance).to(WebApiAuthPresenter.class);
+        bind(presenterInstance).to(LoginUseCase.Presenter.class);
+
+        // === Infrastructure → Outbound ===
+        bind(InMemoryUserRepo.class).to(UserRepository.class).in(Singleton.class);
+        bind(BCryptPasswordEncoder.class).to(PasswordEncoder.class).in(Singleton.class);
+        bind(JjwtTokenService.class).to(TokenService.class).in(Singleton.class);
 
         // === SeatAndRoom ===
         // bind(InMemorySeatRepo.class).to(SeatRepository.class);
