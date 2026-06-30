@@ -1,12 +1,20 @@
 package org.cleancoders.infrastructure.security;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JjwtTokenServiceTest {
 
     private final JjwtTokenService service = new JjwtTokenService();
+    private static final String SECRET = "this-is-a-test-secret-key-for-jwt-signing-256bit!!";
+    private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     @Test
     void shouldGenerateNonEmptyToken() {
@@ -19,7 +27,7 @@ class JjwtTokenServiceTest {
     void shouldGenerateTokenWithThreeDotSegments() {
         String token = service.generate("u1", "alice", "STUDENT");
         String[] parts = token.split("\\.");
-        assertEquals(3, parts.length, "JWT 应包含 header.payload.signature 三段");
+        assertEquals(3, parts.length, "JWT should have header.payload.signature");
     }
 
     @Test
@@ -30,9 +38,20 @@ class JjwtTokenServiceTest {
     }
 
     @Test
-    void shouldGenerateDeterministicTokensForSameInput() {
-        String t1 = service.generate("u1", "alice", "STUDENT");
-        String t2 = service.generate("u1", "alice", "STUDENT");
-        assertEquals(t1, t2, "相同输入在同一时刻应产生相同 token（确定性）");
+    void shouldGenerateValidTokenWithCorrectClaims() {
+        String token = service.generate("u1", "alice", "STUDENT");
+
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        assertEquals("u1", claims.getSubject());
+        assertEquals("alice", claims.get("username"));
+        assertEquals("STUDENT", claims.get("role"));
+        assertNotNull(claims.getIssuedAt());
+        assertNotNull(claims.getExpiration());
+        assertTrue(claims.getExpiration().after(claims.getIssuedAt()));
     }
 }
