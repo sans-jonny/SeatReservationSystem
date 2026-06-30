@@ -8,6 +8,7 @@ import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.outbound.TokenService;
 import org.cleancoders.userandauth.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
@@ -26,11 +27,13 @@ public class AppBinder extends AbstractBinder {
     protected void configure() {
         // === UserAndAuth UseCases ===
         bind(LoginUseCase.class).to(LoginUseCase.class);
+        bind(RegisterUseCase.class).to(RegisterUseCase.class);
 
-        // === Presenters (instance binding: LoginUseCase and AuthResource share same ThreadLocal) ===
+        // === Presenters (instance binding: UseCases and AuthResource share same ThreadLocal) ===
         WebApiAuthPresenter presenterInstance = new WebApiAuthPresenter();
         bind(presenterInstance).to(WebApiAuthPresenter.class);
         bind(presenterInstance).to(LoginUseCase.Presenter.class);
+        bind(presenterInstance).to(RegisterUseCase.Presenter.class);
 
         // === Infrastructure → Outbound ===
         bind(InMemoryUserRepo.class).to(UserRepository.class).in(Singleton.class);

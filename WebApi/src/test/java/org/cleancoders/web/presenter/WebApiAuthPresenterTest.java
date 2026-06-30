@@ -61,4 +61,37 @@ class WebApiAuthPresenterTest {
         var entity = (java.util.Map<String, Object>) response.getEntity();
         assertEquals("User not found", entity.get("error"));
     }
+
+    // --- RegisterUseCase.Presenter ---
+
+    @Test
+    void registerSuccessShouldReturn201WithUserJson() {
+        User user = new User("u1", "alice", "hashed", UserRole.STUDENT, "Alice", "a@b.com");
+        presenter.success(user);
+
+        Response response = presenter.getResponse();
+        assertEquals(201, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+
+        @SuppressWarnings("unchecked")
+        var userMap = (java.util.Map<String, Object>) entity.get("user");
+        assertEquals("u1", userMap.get("id"));
+        assertEquals("alice", userMap.get("username"));
+        assertEquals("STUDENT", userMap.get("role"));
+    }
+
+    @Test
+    void usernameAlreadyExistsShouldReturn409() {
+        presenter.usernameAlreadyExists("alice");
+
+        Response response = presenter.getResponse();
+        assertEquals(409, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+        assertEquals("Username already exists", entity.get("error"));
+        assertEquals("alice", entity.get("username"));
+    }
 }

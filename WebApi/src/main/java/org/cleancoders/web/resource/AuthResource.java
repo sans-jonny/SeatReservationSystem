@@ -8,11 +8,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.dto.LoginRequest;
 import org.cleancoders.web.dto.RegisterRequest;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
-
-import java.util.Map;
 
 @Path("/api/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,6 +19,7 @@ import java.util.Map;
 public class AuthResource {
 
     @Inject LoginUseCase loginUseCase;
+    @Inject RegisterUseCase registerUseCase;
     @Inject WebApiAuthPresenter presenter;
 
     @POST
@@ -32,6 +32,8 @@ public class AuthResource {
     @POST
     @Path("/register")
     public Response register(RegisterRequest request) {
-        return Response.status(501).entity(Map.of("error", "Not implemented")).build();
+        registerUseCase.execute(new RegisterUseCase.Request(
+                request.username(), request.password(), request.name(), request.email()));
+        return presenter.getResponse();
     }
 }

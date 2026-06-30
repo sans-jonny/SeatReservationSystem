@@ -4,13 +4,16 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.userandauth.domain.User;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.userandauth.usecase.RegisterUseCase;
 
 import java.util.Map;
 
 @Singleton
-public class WebApiAuthPresenter implements LoginUseCase.Presenter {
+public class WebApiAuthPresenter implements LoginUseCase.Presenter, RegisterUseCase.Presenter {
 
     private final ThreadLocal<Response> current = new ThreadLocal<>();
+
+    // --- LoginUseCase.Presenter ---
 
     @Override
     public void success(String token, User user) {
@@ -39,6 +42,31 @@ public class WebApiAuthPresenter implements LoginUseCase.Presenter {
                 "error", "User not found"
         )).build());
     }
+
+    // --- RegisterUseCase.Presenter ---
+
+    @Override
+    public void success(User user) {
+        current.set(Response.status(201).entity(Map.of(
+                "user", Map.of(
+                        "id", user.id(),
+                        "username", user.username(),
+                        "role", user.role().name(),
+                        "name", user.name(),
+                        "email", user.email()
+                )
+        )).build());
+    }
+
+    @Override
+    public void usernameAlreadyExists(String username) {
+        current.set(Response.status(409).entity(Map.of(
+                "error", "Username already exists",
+                "username", username
+        )).build());
+    }
+
+    // ---
 
     public Response getResponse() {
         return current.get();

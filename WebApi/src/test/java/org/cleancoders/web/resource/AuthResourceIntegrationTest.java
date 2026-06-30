@@ -13,6 +13,7 @@ import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.outbound.TokenService;
 import org.cleancoders.userandauth.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.filter.CorsFilter;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -49,8 +50,10 @@ class AuthResourceIntegrationTest extends JerseyTest {
                 bind(new BCryptPasswordEncoder()).to(PasswordEncoder.class);
                 bind(new JjwtTokenService()).to(TokenService.class);
                 bind(LoginUseCase.class).to(LoginUseCase.class);
+                bind(RegisterUseCase.class).to(RegisterUseCase.class);
                 bind(presenterInstance).to(WebApiAuthPresenter.class);
                 bind(presenterInstance).to(LoginUseCase.Presenter.class);
+                bind(presenterInstance).to(RegisterUseCase.Presenter.class);
             }
         });
         return config;
@@ -115,7 +118,7 @@ class AuthResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    void shouldReturn501ForRegister() {
+    void shouldRegisterSuccessfully() {
         Map<String, String> body = Map.of(
                 "username", "newuser",
                 "password", "pass",
@@ -126,7 +129,35 @@ class AuthResourceIntegrationTest extends JerseyTest {
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
-        assertEquals(501, response.getStatus());
+        assertEquals(201, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entity = response.readEntity(Map.class);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> userMap = (Map<String, Object>) entity.get("user");
+        assertEquals("newuser", userMap.get("username"));
+        assertEquals("STUDENT", userMap.get("role"));
+    }
+
+    @Test
+    void shouldReturn409ForDuplicateUsername() {
+        Map<String, String> body = Map.of(
+                "username", "testuser",
+                "password", "pass",
+                "name", "Dup",
+                "email", "dup@example.com"
+        );
+        Response response = target("/api/auth/register")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(body));
+
+        assertEquals(409, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entity = response.readEntity(Map.class);
+        assertEquals("Username already exists", entity.get("error"));
+        assertEquals("testuser", entity.get("username"));
     }
 
     @Test

@@ -4,6 +4,7 @@ import jakarta.ws.rs.core.Response;
 import org.cleancoders.userandauth.domain.User;
 import org.cleancoders.userandauth.domain.UserRole;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
+import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.dto.LoginRequest;
 import org.cleancoders.web.dto.RegisterRequest;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
@@ -16,45 +17,58 @@ class AuthResourceTest {
 
     private AuthResource resource;
     private WebApiAuthPresenter presenter;
-    private boolean executeCalled;
-    private LoginUseCase.Request lastRequest;
-    private LoginUseCase.Output outputToReturn;
+    private boolean loginExecuteCalled;
+    private LoginUseCase.Request lastLoginRequest;
+    private LoginUseCase.Output loginOutputToReturn;
+    private boolean registerExecuteCalled;
+    private RegisterUseCase.Request lastRegisterRequest;
+    private RegisterUseCase.Output registerOutputToReturn;
 
     @BeforeEach
     void setUp() {
         presenter = new WebApiAuthPresenter();
-        executeCalled = false;
-        lastRequest = null;
+        loginExecuteCalled = false;
+        lastLoginRequest = null;
+        registerExecuteCalled = false;
+        lastRegisterRequest = null;
 
         resource = new AuthResource();
         resource.presenter = presenter;
         resource.loginUseCase = new LoginUseCase() {
             @Override
             public Output execute(Request request) {
-                executeCalled = true;
-                lastRequest = request;
-                return outputToReturn;
+                loginExecuteCalled = true;
+                lastLoginRequest = request;
+                return loginOutputToReturn;
+            }
+        };
+        resource.registerUseCase = new RegisterUseCase() {
+            @Override
+            public Output execute(Request request) {
+                registerExecuteCalled = true;
+                lastRegisterRequest = request;
+                return registerOutputToReturn;
             }
         };
     }
 
     @Test
     void loginShouldDelegateToUseCase() {
-        outputToReturn = new LoginUseCase.Output("test.jwt.token");
+        loginOutputToReturn = new LoginUseCase.Output("test.jwt.token");
         presenter.success("test.jwt.token",
                 new User("u1", "alice", "pw", UserRole.STUDENT, "Alice", "a@b.com"));
 
         Response response = resource.login(new LoginRequest("alice", "secret"));
 
-        assertTrue(executeCalled);
-        assertEquals("alice", lastRequest.username());
-        assertEquals("secret", lastRequest.password());
+        assertTrue(loginExecuteCalled);
+        assertEquals("alice", lastLoginRequest.username());
+        assertEquals("secret", lastLoginRequest.password());
         assertEquals(200, response.getStatus());
     }
 
     @Test
     void loginShouldReturn401OnBadCredentials() {
-        outputToReturn = null;
+        loginOutputToReturn = null;
         presenter.invalidCredentials();
 
         Response response = resource.login(new LoginRequest("alice", "wrong"));
@@ -63,8 +77,27 @@ class AuthResourceTest {
     }
 
     @Test
-    void registerShouldReturn501() {
-        Response response = resource.register(new RegisterRequest("u", "p", "n", "e"));
-        assertEquals(501, response.getStatus());
+    void registerShouldDelegateToUseCase() {
+        registerOutputToReturn = new RegisterUseCase.Output("new-id");
+        presenter.success(new User("new-id", "bob", "hashed", UserRole.STUDENT, "Bob", "bob@b.com"));
+
+        Response response = resource.register(new RegisterRequest("bob", "pass", "Bob", "bob@b.com"));
+
+        assertTrue(registerExecuteCalled);
+        assertEquals("bob", lastRegisterRequest.username());
+        assertEquals("pass", lastRegisterRequest.password());
+        assertEquals("Bob", lastRegisterRequest.name());
+        assertEquals("bob@b.com", lastRegisterRequest.email());
+        assertEquals(201, response.getStatus());
+    }
+
+    @Test
+    void registerShouldReturn409OnDuplicateUsername() {
+        registerOutputToReturn = null;
+        presenter.usernameAlreadyExists("bob");
+
+        Response response = resource.register(new RegisterRequest("bob", "pass", "Bob", "bob@b.com"));
+
+        assertEquals(409, response.getStatus());
     }
 }
