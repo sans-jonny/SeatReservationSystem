@@ -1,0 +1,42 @@
+package org.cleancoders.userandauth.usecase;
+
+import jakarta.inject.Inject;
+import org.cleancoders.userandauth.domain.User;
+import org.cleancoders.userandauth.outbound.PasswordEncoder;
+import org.cleancoders.userandauth.outbound.TokenService;
+import org.cleancoders.userandauth.outbound.UserRepository;
+
+public class LoginUseCase {
+
+    public record Request(String username, String password) {}
+    public record Output(String token) {}
+
+    public interface Presenter {
+        void success(String token, User user);
+        void invalidCredentials();
+        void userNotFound();
+    }
+
+    @Inject UserRepository userRepo;
+    @Inject PasswordEncoder passwordEncoder;
+    @Inject TokenService tokenService;
+    @Inject Presenter presenter;
+
+    public Output execute(Request request) {
+        var user = userRepo.findByUsername(request.username());
+        if (user.isEmpty()) {
+            presenter.userNotFound();
+            return null;
+        }
+
+        var u = user.get();
+        if (!passwordEncoder.matches(request.password(), u.password())) {
+            presenter.invalidCredentials();
+            return null;
+        }
+
+        String token = tokenService.generate(u.id(), u.username(), u.role().name());
+        presenter.success(token, u);
+        return new Output(token);
+    }
+}
