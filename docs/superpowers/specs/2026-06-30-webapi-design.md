@@ -192,20 +192,25 @@ public abstract class AuthUseCase<R extends AuthUseCase.AuthRequest> {
 
 ### 模式：Presenter 构造函数注入 + ThreadLocal
 
+- **Output** — `execute()` 的返回值，精简，仅含业务标识字段
+- **Presenter** — 需要展示的数据直接通过方法形参传入，参数尽量少
+- **Resource** — 调用 `execute()` 拿到 Output，通过 `presenter.getResponse()` 获取 HTTP 响应
+
 ```java
 // UseCase 层 — 定义接口
 public class ReserveUseCase extends StudentAuthUseCase<ReserveUseCase.Request> {
 
     @Inject protected Presenter presenter;  // ← 构造函数注入
+    @Inject protected ReservationRepository reservationRepo;
+    @Inject protected SeatRepository seatRepo;
 
     public interface Presenter {
-        void success(Output output);
+        void success(String reservationId, String seatNumber, String timeSlot);
         void seatNotAvailable(String seatId, String timeSlot);
         void duplicateReservation(String existingId);
     }
 
-    public record Output(String reservationId, String seatNumber, 
-                         String timeSlot, LocalDate date) {}
+    public record Output(String reservationId) {}  // ← execute() 返回值，精简
 
     public static class Request extends AuthRequest {
         private final String seatId;
@@ -220,9 +225,11 @@ public class ReserveUseCase extends StudentAuthUseCase<ReserveUseCase.Request> {
     }
 
     @Override
-    protected void doExecute(User user, Request req) {
+    protected Output doExecute(User user, Request req) {
         // 冲突检测 ...
-        presenter.success(new Output(...));
+        Reservation r = reservationRepo.save(...);
+        presenter.success(r.getId(), r.getSeatNumber(), r.getTimeSlotLabel());
+        return new Output(r.getId());
     }
 }
 
@@ -231,14 +238,28 @@ public class ReserveUseCase extends StudentAuthUseCase<ReserveUseCase.Request> {
 public class WebApiReservationPresenter implements ReserveUseCase.Presenter {
     private final ThreadLocal<Response> current = new ThreadLocal<>();
 
-    @Override public void success(Output o) {
-        current.set(Response.status(201).entity(o).build());
+    @Override
+    public void success(String reservationId, String seatNumber, String timeSlot) {
+        current.set(Response.status(201).entity(Map.of(
+            "reservationId", reservationId,
+            "seatNumber", seatNumber,
+            "timeSlot", timeSlot
+        )).build());
     }
-    @Override public void seatNotAvailable(String seatId, String slot) {
-        current.set(Response.status(409).entity(Map.of("error", "座位已被预约")).build());
+    @Override
+    public void seatNotAvailable(String seatId, String timeSlot) {
+        current.set(Response.status(409).entity(Map.of(
+            "error", "座位已被预约",
+            "seatId", seatId,
+            "timeSlot", timeSlot
+        )).build());
     }
-    @Override public void duplicateReservation(String id) {
-        current.set(Response.status(409).entity(Map.of("error", "已有预约")).build());
+    @Override
+    public void duplicateReservation(String existingId) {
+        current.set(Response.status(409).entity(Map.of(
+            "error", "该时段已有预约",
+            "existingReservationId", existingId
+        )).build());
     }
 
     public Response getResponse() { return current.get(); }
@@ -252,9 +273,10 @@ public class ReservationResource {
 
     @POST
     public Response reserve(@HeaderParam("Authorization") String auth, ReserveInput input) {
-        reserveUseCase.execute(
+        ReserveUseCase.Output output = reserveUseCase.execute(
             new ReserveUseCase.Request(extractBearer(auth), input.seatId, input.timeSlotId, input.date)
         );
+        // output.reservationId 可用于日志、后续操作等
         return presenter.getResponse();
     }
 }
