@@ -7,15 +7,15 @@ import org.cleancoders.web.filter.CorsFilter;
 import org.cleancoders.web.resource.HealthResource;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test for the health check endpoint.
- * Uses Jersey Test Framework with embedded Grizzly HTTP server.
+ * Uses Jersey Test Framework with embedded Jetty HTTP server.
  */
 public class HealthResourceTest extends JerseyTest {
 
@@ -25,7 +25,7 @@ public class HealthResourceTest extends JerseyTest {
     }
 
     @Test
-    public void healthEndpoint_ShouldReturn200_WithStatusUP() {
+    void healthEndpointShouldReturn200WithStatusUP() {
         Response response = target("/health")
                 .request(MediaType.APPLICATION_JSON)
                 .get();
@@ -40,7 +40,7 @@ public class HealthResourceTest extends JerseyTest {
     }
 
     @Test
-    public void healthEndpoint_ShouldReturnJSONContentType() {
+    void healthEndpointShouldReturnJSONContentType() {
         Response response = target("/health")
                 .request(MediaType.APPLICATION_JSON)
                 .get();
