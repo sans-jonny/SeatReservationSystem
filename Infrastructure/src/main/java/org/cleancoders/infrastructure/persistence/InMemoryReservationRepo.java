@@ -60,4 +60,9 @@ public class InMemoryReservationRepo implements ReservationRepository {
                 .filter(r -> r.userId().equals(userId))
                 .toList();
     }
+
+    @Override
+    public List<Reservation> findAll() {
+        return List.copyOf(store.values());
+    }
 }

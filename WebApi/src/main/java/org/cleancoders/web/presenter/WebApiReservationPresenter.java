@@ -8,6 +8,7 @@ import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.CheckOutUseCase;
 import org.cleancoders.reservation.usecase.ListMyReservationsUseCase;
 import org.cleancoders.reservation.usecase.ListMyReservationsUseCase.ReservationItem;
+import org.cleancoders.reservation.usecase.ManageReservationsUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
 
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.Map;
  * allowing the singleton presenter to serve concurrent HTTP requests safely.
  */
 @Singleton
-public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter, CheckOutUseCase.Presenter, CancelReservationUseCase.Presenter, ListMyReservationsUseCase.Presenter {
+public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter, CheckOutUseCase.Presenter, CancelReservationUseCase.Presenter, ListMyReservationsUseCase.Presenter, ManageReservationsUseCase.Presenter {
 
     private final ThreadLocal<Response> current = new ThreadLocal<>();
 
@@ -141,6 +142,32 @@ public class WebApiReservationPresenter implements ReserveUseCase.Presenter, Che
                         "status", item.status(),
                         "createdAt", item.createdAt().toString()
                 ))
+                .toList();
+
+        current.set(Response.ok(Map.of("reservations", list)).build());
+    }
+
+    // --- ManageReservationsUseCase.Presenter ---
+
+    @Override
+    public void presentReservations(List<ManageReservationsUseCase.ReservationItem> items) {
+        var list = items.stream()
+                .map(item -> {
+                    var m = new java.util.LinkedHashMap<String, Object>();
+                    m.put("reservationId", item.reservationId());
+                    m.put("userId", item.userId());
+                    m.put("username", item.username());
+                    m.put("seatId", item.seatId());
+                    m.put("seatNumber", item.seatNumber());
+                    m.put("timeSlotId", item.timeSlotId());
+                    m.put("timeSlotLabel", item.timeSlotLabel());
+                    m.put("date", item.date().toString());
+                    m.put("status", item.status());
+                    m.put("createdAt", item.createdAt() != null ? item.createdAt().toString() : null);
+                    m.put("checkInAt", item.checkInAt() != null ? item.checkInAt().toString() : null);
+                    m.put("checkOutAt", item.checkOutAt() != null ? item.checkOutAt().toString() : null);
+                    return m;
+                })
                 .toList();
 
         current.set(Response.ok(Map.of("reservations", list)).build());

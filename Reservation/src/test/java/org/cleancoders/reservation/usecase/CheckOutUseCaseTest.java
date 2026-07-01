@@ -246,6 +246,11 @@ class CheckOutUseCaseTest {
                     .filter(r -> r.userId().equals(userId))
                     .toList();
         }
+
+        @Override
+        public List<Reservation> findAll() {
+            return List.copyOf(reservations.values());
+        }
     }
 
     static class StubSeatRepo implements SeatRepository {

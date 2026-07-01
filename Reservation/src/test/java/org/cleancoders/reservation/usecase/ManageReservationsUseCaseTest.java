@@ -18,16 +18,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ListMyReservationsUseCaseTest {
+class ManageReservationsUseCaseTest {
 
-    private ListMyReservationsUseCase useCase;
+    private ManageReservationsUseCase useCase;
     private StubTokenService tokenService;
     private StubUserRepo userRepo;
     private StubReservationRepo reservationRepo;
@@ -35,9 +35,9 @@ class ListMyReservationsUseCaseTest {
     private StubTimeSlotRepo timeSlotRepo;
     private StubPresenter presenter;
 
-    private static final String STUDENT_ID = "student-1";
-    private static final String STUDENT_TOKEN = "jwt:" + STUDENT_ID + ":alice:STUDENT";
-    private static final String ADMIN_TOKEN = "jwt:admin-1:bob:ADMIN";
+    private static final String ADMIN_ID = "admin-1";
+    private static final String ADMIN_TOKEN = "jwt:" + ADMIN_ID + ":bob:ADMIN";
+    private static final String STUDENT_TOKEN = "jwt:student-1:alice:STUDENT";
     private static final String SEAT_ID = "seat-1";
     private static final String TIME_SLOT_ID = "ts-1";
     private static final LocalDate DATE = LocalDate.of(2026, 7, 2);
@@ -51,7 +51,7 @@ class ListMyReservationsUseCaseTest {
         timeSlotRepo = new StubTimeSlotRepo();
         presenter = new StubPresenter();
 
-        useCase = new ListMyReservationsUseCase();
+        useCase = new ManageReservationsUseCase();
         useCase.tokenService = tokenService;
         useCase.userRepo = userRepo;
         useCase.reservationRepo = reservationRepo;
@@ -59,57 +59,45 @@ class ListMyReservationsUseCaseTest {
         useCase.timeSlotRepo = timeSlotRepo;
         useCase.presenter = presenter;
 
-        userRepo.addUser(new User(STUDENT_ID, "alice", "hashed", UserRole.STUDENT, "Alice", "a@b.com"));
-        userRepo.addUser(new User("admin-1", "bob", "hashed", UserRole.ADMIN, "Bob", "b@b.com"));
+        userRepo.addUser(new User(ADMIN_ID, "bob", "hashed", UserRole.ADMIN, "Bob", "b@b.com"));
+        userRepo.addUser(new User("student-1", "alice", "hashed", UserRole.STUDENT, "Alice", "a@b.com"));
         seatRepo.addSeat(new Seat(SEAT_ID, "room-1", "A-1", SeatStatus.AVAILABLE));
         timeSlotRepo.addTimeSlot(new TimeSlot(TIME_SLOT_ID, "08:00", "12:00", "上午 08:00-12:00"));
     }
 
     @Test
-    void shouldReturnOwnReservations() {
-        reservationRepo.addReservation(new Reservation("res-1", STUDENT_ID, SEAT_ID, TIME_SLOT_ID, DATE));
-        reservationRepo.addReservation(new Reservation("res-2", STUDENT_ID, "seat-2", TIME_SLOT_ID, DATE));
+    void shouldReturnAllReservations() {
+        reservationRepo.addReservation(new Reservation("res-1", ADMIN_ID, SEAT_ID, TIME_SLOT_ID, DATE));
+        reservationRepo.addReservation(new Reservation("res-2", "student-1", SEAT_ID, TIME_SLOT_ID, DATE));
 
-        var output = useCase.execute(new ListMyReservationsUseCase.Request(STUDENT_TOKEN));
+        var output = useCase.execute(new ManageReservationsUseCase.Request(ADMIN_TOKEN));
 
         assertNotNull(output);
         assertEquals(2, output.items().size());
         assertEquals(2, presenter.items.size());
-        assertEquals("res-1", presenter.items.get(0).reservationId());
-        assertEquals("A-1", presenter.items.get(0).seatNumber());
-    }
-
-    @Test
-    void shouldNotReturnOtherUsersReservations() {
-        reservationRepo.addReservation(new Reservation("res-1", STUDENT_ID, SEAT_ID, TIME_SLOT_ID, DATE));
-        reservationRepo.addReservation(new Reservation("res-2", "other-user", SEAT_ID, TIME_SLOT_ID, DATE));
-
-        var output = useCase.execute(new ListMyReservationsUseCase.Request(STUDENT_TOKEN));
-
-        assertNotNull(output);
-        assertEquals(1, output.items().size());
+        assertEquals("bob", presenter.items.get(0).username());
+        assertEquals("alice", presenter.items.get(1).username());
     }
 
     @Test
     void shouldReturnEmptyListWhenNoReservations() {
-        var output = useCase.execute(new ListMyReservationsUseCase.Request(STUDENT_TOKEN));
+        var output = useCase.execute(new ManageReservationsUseCase.Request(ADMIN_TOKEN));
 
         assertNotNull(output);
         assertTrue(output.items().isEmpty());
-        assertTrue(presenter.items.isEmpty());
     }
 
     @Test
     void shouldRejectInvalidToken() {
-        var output = useCase.execute(new ListMyReservationsUseCase.Request("bad-token"));
+        var output = useCase.execute(new ManageReservationsUseCase.Request("bad-token"));
 
         assertNull(output);
         assertTrue(presenter.invalidTokenCalled);
     }
 
     @Test
-    void shouldRejectAdminUser() {
-        var output = useCase.execute(new ListMyReservationsUseCase.Request(ADMIN_TOKEN));
+    void shouldRejectStudentUser() {
+        var output = useCase.execute(new ManageReservationsUseCase.Request(STUDENT_TOKEN));
 
         assertNull(output);
         assertTrue(presenter.forbiddenCalled);
@@ -119,10 +107,9 @@ class ListMyReservationsUseCaseTest {
 
     static class StubTokenService implements TokenService {
         @Override public String generate(String uid, String un, String r) { return "jwt:" + uid + ":" + un + ":" + r; }
-        @Override public TokenPayload validate(String token) {
-            if (token == null || !token.startsWith("jwt:")) throw new TokenValidationException("Invalid");
-            String[] p = token.split(":");
-            if (p.length != 4) throw new TokenValidationException("Invalid");
+        @Override public TokenPayload validate(String t) {
+            if (t == null || !t.startsWith("jwt:")) throw new TokenValidationException("Invalid");
+            String[] p = t.split(":"); if (p.length != 4) throw new TokenValidationException("Invalid");
             return new TokenPayload(p[1], p[2], p[3]);
         }
     }
@@ -148,13 +135,8 @@ class ListMyReservationsUseCaseTest {
                 String sid, LocalDate d, String ts, Set<ReservationStatus> ss) {
             return m.values().stream().filter(r -> r.seatId().equals(sid) && r.date().equals(d) && r.timeSlotId().equals(ts) && ss.contains(r.status())).findFirst();
         }
-        @Override public List<Reservation> findByUserId(String userId) {
-            return m.values().stream().filter(r -> r.userId().equals(userId)).toList();
-        }
-
-        @Override public List<Reservation> findAll() {
-            return List.copyOf(m.values());
-        }
+        @Override public List<Reservation> findByUserId(String uid) { return m.values().stream().filter(r -> r.userId().equals(uid)).toList(); }
+        @Override public List<Reservation> findAll() { return new ArrayList<>(m.values()); }
     }
 
     static class StubSeatRepo implements SeatRepository {
@@ -172,11 +154,10 @@ class ListMyReservationsUseCaseTest {
         @Override public List<TimeSlot> findAll() { return List.copyOf(m.values()); }
     }
 
-    static class StubPresenter implements ListMyReservationsUseCase.Presenter {
-        List<ListMyReservationsUseCase.ReservationItem> items = List.of();
+    static class StubPresenter implements ManageReservationsUseCase.Presenter {
+        List<ManageReservationsUseCase.ReservationItem> items = List.of();
         boolean invalidTokenCalled, userNotFoundCalled, forbiddenCalled;
-
-        @Override public void presentReservations(List<ListMyReservationsUseCase.ReservationItem> items) { this.items = items; }
+        @Override public void presentReservations(List<ManageReservationsUseCase.ReservationItem> items) { this.items = items; }
         @Override public void forbidden() { forbiddenCalled = true; }
         @Override public void invalidToken() { invalidTokenCalled = true; }
         @Override public void userNotFound() { userNotFoundCalled = true; }

@@ -35,4 +35,6 @@ public interface ReservationRepository {
      * Finds all reservations for a given user.
      */
     List<Reservation> findByUserId(String userId);
+
+    List<Reservation> findAll();
 }
