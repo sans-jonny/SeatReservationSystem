@@ -13,13 +13,13 @@ import jakarta.ws.rs.core.Response;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
-import org.cleancoders.web.dto.ErrorResponse;
-import org.cleancoders.web.dto.LoginRequest;
-import org.cleancoders.web.dto.LoginResponse;
-import org.cleancoders.web.dto.MeResponse;
-import org.cleancoders.web.dto.RegisterRequest;
-import org.cleancoders.web.dto.RegisterResponse;
-import org.cleancoders.web.dto.UsernameConflictResponse;
+import org.cleancoders.web.dto.auth.LoginRequest;
+import org.cleancoders.web.dto.auth.LoginResponse;
+import org.cleancoders.web.dto.auth.MeResponse;
+import org.cleancoders.web.dto.auth.RegisterRequest;
+import org.cleancoders.web.dto.auth.RegisterResponse;
+import org.cleancoders.web.dto.auth.UsernameConflictResponse;
+import org.cleancoders.web.dto.common.ErrorResponse;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
 
 @Path("/auth")
