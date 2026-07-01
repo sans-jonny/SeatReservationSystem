@@ -5,14 +5,14 @@ import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
-import org.cleancoders.web.dto.DuplicateReservationResponse;
-import org.cleancoders.web.dto.ErrorResponse;
-import org.cleancoders.web.dto.InvalidStatusResponse;
-import org.cleancoders.web.dto.ReservationCreatedResponse;
-import org.cleancoders.web.dto.ReservationNotFoundResponse;
-import org.cleancoders.web.dto.SeatConflictResponse;
-import org.cleancoders.web.dto.SeatNotFoundResponse;
-import org.cleancoders.web.dto.TimeSlotNotFoundResponse;
+import org.cleancoders.web.dto.common.ErrorResponse;
+import org.cleancoders.web.dto.reservation.DuplicateReservationResponse;
+import org.cleancoders.web.dto.reservation.InvalidStatusResponse;
+import org.cleancoders.web.dto.reservation.ReservationCreatedResponse;
+import org.cleancoders.web.dto.reservation.ReservationNotFoundResponse;
+import org.cleancoders.web.dto.reservation.SeatConflictResponse;
+import org.cleancoders.web.dto.reservation.SeatNotFoundResponse;
+import org.cleancoders.web.dto.reservation.TimeSlotNotFoundResponse;
 
 /**
  * WebApi presenter implementation for {@link ReserveUseCase.Presenter}

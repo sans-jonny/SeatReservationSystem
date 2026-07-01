@@ -3,10 +3,10 @@ package org.cleancoders.web.presenter;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
-import org.cleancoders.web.dto.ErrorResponse;
-import org.cleancoders.web.dto.LoginResponse;
-import org.cleancoders.web.dto.RegisterResponse;
-import org.cleancoders.web.dto.UsernameConflictResponse;
+import org.cleancoders.web.dto.auth.LoginResponse;
+import org.cleancoders.web.dto.auth.RegisterResponse;
+import org.cleancoders.web.dto.auth.UsernameConflictResponse;
+import org.cleancoders.web.dto.common.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

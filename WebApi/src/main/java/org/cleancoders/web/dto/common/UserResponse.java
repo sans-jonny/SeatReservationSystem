@@ -1,4 +1,4 @@
-package org.cleancoders.web.dto;
+package org.cleancoders.web.dto.common;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.cleancoders.common.domain.UserRole;

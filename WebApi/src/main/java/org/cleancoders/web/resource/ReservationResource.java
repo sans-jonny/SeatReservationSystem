@@ -12,7 +12,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
-import org.cleancoders.web.dto.*;
+import org.cleancoders.web.dto.common.ErrorResponse;
+import org.cleancoders.web.dto.reservation.InvalidDateResponse;
+import org.cleancoders.web.dto.reservation.InvalidStatusResponse;
+import org.cleancoders.web.dto.reservation.ReservationCreatedResponse;
+import org.cleancoders.web.dto.reservation.ReservationNotFoundResponse;
+import org.cleancoders.web.dto.reservation.ReserveInput;
+import org.cleancoders.web.dto.reservation.SeatConflictResponse;
+import org.cleancoders.web.dto.reservation.SeatNotFoundResponse;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
 
 import java.time.LocalDate;

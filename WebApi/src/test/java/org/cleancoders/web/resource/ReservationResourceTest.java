@@ -2,7 +2,7 @@ package org.cleancoders.web.resource;
 
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
-import org.cleancoders.web.dto.ReserveInput;
+import org.cleancoders.web.dto.reservation.ReserveInput;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
