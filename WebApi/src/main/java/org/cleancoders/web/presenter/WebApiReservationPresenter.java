@@ -6,8 +6,11 @@ import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.usecase.CancelReservationUseCase;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.CheckOutUseCase;
+import org.cleancoders.reservation.usecase.ListMyReservationsUseCase;
+import org.cleancoders.reservation.usecase.ListMyReservationsUseCase.ReservationItem;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,7 +21,7 @@ import java.util.Map;
  * allowing the singleton presenter to serve concurrent HTTP requests safely.
  */
 @Singleton
-public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter, CheckOutUseCase.Presenter, CancelReservationUseCase.Presenter {
+public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter, CheckOutUseCase.Presenter, CancelReservationUseCase.Presenter, ListMyReservationsUseCase.Presenter {
 
     private final ThreadLocal<Response> current = new ThreadLocal<>();
 
@@ -121,6 +124,26 @@ public class WebApiReservationPresenter implements ReserveUseCase.Presenter, Che
         current.set(Response.status(409).entity(Map.of(
                 "error", reason
         )).build());
+    }
+
+    // --- ListMyReservationsUseCase.Presenter ---
+
+    @Override
+    public void presentReservations(List<ReservationItem> items) {
+        var list = items.stream()
+                .map(item -> Map.of(
+                        "reservationId", item.reservationId(),
+                        "seatId", item.seatId(),
+                        "seatNumber", item.seatNumber(),
+                        "timeSlotId", item.timeSlotId(),
+                        "timeSlotLabel", item.timeSlotLabel(),
+                        "date", item.date().toString(),
+                        "status", item.status(),
+                        "createdAt", item.createdAt().toString()
+                ))
+                .toList();
+
+        current.set(Response.ok(Map.of("reservations", list)).build());
     }
 
     // ---
