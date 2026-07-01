@@ -4,19 +4,20 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
+import org.cleancoders.reservation.usecase.CheckOutUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
 
 import java.util.Map;
 
 /**
- * WebApi presenter implementation for {@link ReserveUseCase.Presenter}
- * and {@link CheckInUseCase.Presenter}.
+ * WebApi presenter implementation for {@link ReserveUseCase.Presenter},
+ * {@link CheckInUseCase.Presenter}, and {@link CheckOutUseCase.Presenter}.
  * <p>
  * Uses {@link ThreadLocal} to store the current request's {@link Response},
  * allowing the singleton presenter to serve concurrent HTTP requests safely.
  */
 @Singleton
-public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter {
+public class WebApiReservationPresenter implements ReserveUseCase.Presenter, CheckInUseCase.Presenter, CheckOutUseCase.Presenter {
 
     private final ThreadLocal<Response> current = new ThreadLocal<>();
 

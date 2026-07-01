@@ -9,6 +9,7 @@ import org.cleancoders.infrastructure.security.BCryptPasswordEncoder;
 import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.reservation.outbound.ReservationRepository;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
+import org.cleancoders.reservation.usecase.CheckOutUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
 import org.cleancoders.seatandroom.outbound.SeatRepository;
 import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
@@ -61,12 +62,14 @@ public class AppBinder extends AbstractBinder
         // === Reservation UseCases ===
         bind(ReserveUseCase.class).to(ReserveUseCase.class);
         bind(CheckInUseCase.class).to(CheckInUseCase.class);
+        bind(CheckOutUseCase.class).to(CheckOutUseCase.class);
 
         // === Reservation Presenters ===
         WebApiReservationPresenter reservationPresenterInstance = new WebApiReservationPresenter();
         bind(reservationPresenterInstance).to(WebApiReservationPresenter.class);
         bind(reservationPresenterInstance).to(ReserveUseCase.Presenter.class);
         bind(reservationPresenterInstance).to(CheckInUseCase.Presenter.class);
+        bind(reservationPresenterInstance).to(CheckOutUseCase.Presenter.class);
 
         // === Reservation Repositories ===
         bind(InMemoryReservationRepo.class).to(ReservationRepository.class).in(Singleton.class);
