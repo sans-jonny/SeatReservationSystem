@@ -1,5 +1,7 @@
 package org.cleancoders.web;
 
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import jakarta.ws.rs.core.Application;
 import org.cleancoders.web.binder.AppBinder;
 import org.cleancoders.web.filter.CorsFilter;
@@ -22,6 +24,9 @@ public class AppConfig extends Application {
         // Resources
         classes.add(HealthResource.class);
         classes.add(AuthResource.class);
+        // Swagger / OpenAPI endpoints (served under /api/ prefix per web.xml mapping)
+        classes.add(OpenApiResource.class);
+        classes.add(AcceptHeaderOpenApiResource.class);
         // Providers / Filters
         classes.add(CorsFilter.class);
         // HK2 Binder (must be registered as a class so Jersey discovers it)

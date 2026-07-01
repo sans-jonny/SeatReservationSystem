@@ -78,6 +78,24 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Swagger / OpenAPI v3 for Jersey (Jakarta) -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
+            <version>2.2.22</version>
+        </dependency>
+
+        <!-- Swagger Annotations -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.22</version>
+        </dependency>
+
+        <!-- Swagger UI is served as a static page (src/main/webapp/swagger-ui.html).
+             It loads Swagger UI JS/CSS from CDN and points to /api/openapi.json.
+             No additional dependency required. -->
+
         <!-- JUnit Jupiter -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
