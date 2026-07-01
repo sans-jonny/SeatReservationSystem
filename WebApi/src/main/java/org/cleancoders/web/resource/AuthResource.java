@@ -6,11 +6,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.dto.LoginRequest;
@@ -29,6 +32,8 @@ public class AuthResource
     @Inject
     RegisterUseCase registerUseCase;
     @Inject
+    GetMeUseCase getMeUseCase;
+    @Inject
     WebApiAuthPresenter presenter;
 
     @POST
@@ -46,6 +51,20 @@ public class AuthResource
         return presenter.getResponse();
     }
 
+    @GET
+    @Path("/me")
+    @Operation(summary = "获取当前用户信息", description = "通过 JWT token 获取当前登录用户的基本信息。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功返回用户信息"),
+            @ApiResponse(responseCode = "401", description = "Token 无效或已过期"),
+            @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
+    public Response me(@CookieParam("Authorization") String authCookie)
+    {
+        getMeUseCase.execute(new GetMeUseCase.Request(authCookie));
+        return presenter.getResponse();
+    }
+
     @POST
     @Path("/register")
     @Operation(summary = "用户注册", description = "注册新用户账户。")
@@ -60,4 +79,5 @@ public class AuthResource
                 request.username(), request.password(), request.name(), request.email()));
         return presenter.getResponse();
     }
+
 }

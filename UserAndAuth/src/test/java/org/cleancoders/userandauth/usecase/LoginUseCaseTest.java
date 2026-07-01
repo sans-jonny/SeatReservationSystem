@@ -3,7 +3,9 @@ package org.cleancoders.userandauth.usecase;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
+import org.cleancoders.userandauth.outbound.TokenPayload;
 import org.cleancoders.userandauth.outbound.TokenService;
+import org.cleancoders.userandauth.outbound.TokenValidationException;
 import org.cleancoders.userandauth.outbound.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +65,15 @@ class LoginUseCaseTest {
         @Override
         public String generate(String userId, String username, String role) {
             return "jwt:" + userId + ":" + username + ":" + role;
+        }
+
+        @Override
+        public TokenPayload validate(String token) {
+            String[] parts = token.split(":");
+            if (parts.length != 4 || !"jwt".equals(parts[0])) {
+                throw new TokenValidationException("Invalid token format");
+            }
+            return new TokenPayload(parts[1], parts[2], parts[3]);
         }
     }
 

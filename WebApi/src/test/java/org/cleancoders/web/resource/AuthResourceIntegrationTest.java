@@ -12,6 +12,7 @@ import org.cleancoders.common.domain.UserRole;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.outbound.TokenService;
 import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.filter.CorsFilter;
@@ -27,10 +28,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AuthResourceIntegrationTest extends JerseyTest {
+class AuthResourceIntegrationTest extends JerseyTest
+{
 
     @Override
-    protected Application configure() {
+    protected Application configure()
+    {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         InMemoryUserRepo userRepo = new InMemoryUserRepo();
 
@@ -43,40 +46,52 @@ class AuthResourceIntegrationTest extends JerseyTest {
         ResourceConfig config = new ResourceConfig();
         config.register(AuthResource.class);
         config.register(CorsFilter.class);
-        config.register(new AbstractBinder() {
+        config.register(new AbstractBinder()
+        {
             @Override
-            protected void configure() {
+            protected void configure()
+            {
                 bind(userRepo).to(UserRepository.class);
                 bind(new BCryptPasswordEncoder()).to(PasswordEncoder.class);
                 bind(new JjwtTokenService()).to(TokenService.class);
                 bind(LoginUseCase.class).to(LoginUseCase.class);
                 bind(RegisterUseCase.class).to(RegisterUseCase.class);
+                bind(GetMeUseCase.class).to(GetMeUseCase.class);
                 bind(presenterInstance).to(WebApiAuthPresenter.class);
                 bind(presenterInstance).to(LoginUseCase.Presenter.class);
                 bind(presenterInstance).to(RegisterUseCase.Presenter.class);
+                bind(presenterInstance).to(GetMeUseCase.Presenter.class);
             }
         });
         return config;
     }
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() throws Exception
+    {
         super.setUp();
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() throws Exception
+    {
         super.tearDown();
     }
 
     @Test
-    void shouldLoginSuccessfullyWithValidCredentials() {
+    void shouldLoginSuccessfullyWithValidCredentials()
+    {
         Map<String, String> body = Map.of("username", "testuser", "password", "testpass");
-        Response response = target("/api/auth/login")
+        Response response = target("/auth/login")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
         assertEquals(200, response.getStatus());
+
+        // 验证 Token 已写入 Cookie
+        String authCookie = response.getCookies().get("Authorization").getValue();
+        assertNotNull(authCookie);
+        assertFalse(authCookie.isBlank());
 
         @SuppressWarnings("unchecked")
         Map<String, Object> entity = response.readEntity(Map.class);
@@ -90,9 +105,10 @@ class AuthResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    void shouldReturn401ForWrongPassword() {
+    void shouldReturn401ForWrongPassword()
+    {
         Map<String, String> body = Map.of("username", "testuser", "password", "wrongpass");
-        Response response = target("/api/auth/login")
+        Response response = target("/auth/login")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
@@ -104,9 +120,10 @@ class AuthResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    void shouldReturn404ForUnknownUser() {
+    void shouldReturn404ForUnknownUser()
+    {
         Map<String, String> body = Map.of("username", "nobody", "password", "any");
-        Response response = target("/api/auth/login")
+        Response response = target("/auth/login")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
@@ -118,14 +135,15 @@ class AuthResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    void shouldRegisterSuccessfully() {
+    void shouldRegisterSuccessfully()
+    {
         Map<String, String> body = Map.of(
                 "username", "newuser",
                 "password", "pass",
                 "name", "New",
                 "email", "new@example.com"
         );
-        Response response = target("/api/auth/register")
+        Response response = target("/auth/register")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
@@ -141,14 +159,15 @@ class AuthResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    void shouldReturn409ForDuplicateUsername() {
+    void shouldReturn409ForDuplicateUsername()
+    {
         Map<String, String> body = Map.of(
                 "username", "testuser",
                 "password", "pass",
                 "name", "Dup",
                 "email", "dup@example.com"
         );
-        Response response = target("/api/auth/register")
+        Response response = target("/auth/register")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
@@ -160,10 +179,96 @@ class AuthResourceIntegrationTest extends JerseyTest {
         assertEquals("testuser", entity.get("username"));
     }
 
+    // === UC-03: GET /api/auth/me ===
+
     @Test
-    void loginResponseShouldHaveJsonContentType() {
+    void shouldReturnCurrentUserWithValidToken()
+    {
+        // First login to get a valid token (returned in Set-Cookie)
+        Map<String, String> loginBody = Map.of("username", "testuser", "password", "testpass");
+        Response loginResponse = target("/auth/login")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(loginBody));
+
+        assertEquals(200, loginResponse.getStatus());
+
+        // 从 Cookie 中获取 Token
+        String authCookie = loginResponse.getCookies().get("Authorization").getValue();
+        assertNotNull(authCookie);
+
+        // 用 Cookie 中的 Token 调用 /api/auth/me
+        Response response = target("/auth/me")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", authCookie)
+                .get();
+
+        assertEquals(200, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entity = response.readEntity(Map.class);
+        assertNotNull(entity.get("user"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> userMap = (Map<String, Object>) entity.get("user");
+        assertEquals("testuser", userMap.get("username"));
+        assertEquals("STUDENT", userMap.get("role"));
+        assertEquals("Test User", userMap.get("name"));
+        assertEquals("test@example.com", userMap.get("email"));
+    }
+
+    @Test
+    void shouldReturn401ForInvalidToken()
+    {
+        Response response = target("/auth/me")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", "invalid.jwt.token")
+                .get();
+
+        assertEquals(401, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entity = response.readEntity(Map.class);
+        assertEquals("Invalid or expired token", entity.get("error"));
+    }
+
+    @Test
+    void shouldReturn401ForMissingCookie()
+    {
+        Response response = target("/auth/me")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+
+        assertEquals(401, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entity = response.readEntity(Map.class);
+        assertEquals("Invalid or expired token", entity.get("error"));
+    }
+
+    @Test
+    void meResponseShouldHaveJsonContentType()
+    {
+        // Login first to get a token
+        Map<String, String> loginBody = Map.of("username", "testuser", "password", "testpass");
+        Response loginResponse = target("/auth/login")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(loginBody));
+
+        String authCookie = loginResponse.getCookies().get("Authorization").getValue();
+
+        Response response = target("/auth/me")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", authCookie)
+                .get();
+
+        assertTrue(response.getHeaderString("Content-Type").startsWith(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    void loginResponseShouldHaveJsonContentType()
+    {
         Map<String, String> body = Map.of("username", "testuser", "password", "testpass");
-        Response response = target("/api/auth/login")
+        Response response = target("/auth/login")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
