@@ -8,7 +8,6 @@ import org.cleancoders.seatandroom.domain.Seat;
 import org.cleancoders.seatandroom.domain.TimeSlot;
 import org.cleancoders.seatandroom.outbound.SeatRepository;
 import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.AdminAuthUseCase;
 import org.cleancoders.userandauth.usecase.AuthUseCase;
 
@@ -34,9 +33,6 @@ public class ManageReservationsUseCase extends AdminAuthUseCase<ManageReservatio
 
     @Inject
     protected TimeSlotRepository timeSlotRepo;
-
-    @Inject
-    protected UserRepository userRepo;
 
     // --- Presenter ---
 
