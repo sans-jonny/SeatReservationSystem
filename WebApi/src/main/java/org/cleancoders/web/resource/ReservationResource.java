@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
 import org.cleancoders.web.dto.ReserveInput;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
@@ -22,6 +23,9 @@ public class ReservationResource {
 
     @Inject
     ReserveUseCase reserveUseCase;
+
+    @Inject
+    CheckInUseCase checkInUseCase;
 
     @Inject
     WebApiReservationPresenter presenter;
@@ -49,6 +53,21 @@ public class ReservationResource {
 
         reserveUseCase.execute(new ReserveUseCase.Request(
                 authCookie, input.seatId(), input.timeSlotId(), date));
+        return presenter.getResponse();
+    }
+
+    @POST
+    @Path("/{id}/check-in")
+    @Operation(summary = "签到", description = "学生对已预约的座位进行签到，需在签到时间窗口内完成。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "签到成功"),
+            @ApiResponse(responseCode = "401", description = "Token 无效或已过期"),
+            @ApiResponse(responseCode = "403", description = "权限不足（非学生角色 / 非本人预约）"),
+            @ApiResponse(responseCode = "404", description = "预约不存在"),
+            @ApiResponse(responseCode = "409", description = "当前状态不允许签到 / 不在签到时间窗口内")
+    })
+    public Response checkIn(@CookieParam("Authorization") String authCookie, @PathParam("id") String reservationId) {
+        checkInUseCase.execute(new CheckInUseCase.Request(authCookie, reservationId));
         return presenter.getResponse();
     }
 }

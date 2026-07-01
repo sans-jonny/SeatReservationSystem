@@ -1,6 +1,7 @@
 package org.cleancoders.web.presenter;
 
 import jakarta.ws.rs.core.Response;
+import org.cleancoders.reservation.domain.ReservationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -116,5 +117,57 @@ class WebApiReservationPresenterTest {
         @SuppressWarnings("unchecked")
         var entity = (java.util.Map<String, Object>) response.getEntity();
         assertEquals("User not found", entity.get("error"));
+    }
+
+    // --- CheckInUseCase.Presenter ---
+
+    @Test
+    void reservationNotFoundShouldReturn404() {
+        presenter.reservationNotFound("res-unknown");
+
+        Response response = presenter.getResponse();
+        assertEquals(404, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+        assertEquals("预约不存在", entity.get("error"));
+        assertEquals("res-unknown", entity.get("reservationId"));
+    }
+
+    @Test
+    void notYourReservationShouldReturn403() {
+        presenter.notYourReservation();
+
+        Response response = presenter.getResponse();
+        assertEquals(403, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+        assertEquals("只能签到自己的预约", entity.get("error"));
+    }
+
+    @Test
+    void invalidStatusShouldReturn409() {
+        presenter.invalidStatus(ReservationStatus.CHECKED_IN);
+
+        Response response = presenter.getResponse();
+        assertEquals(409, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+        assertEquals("当前状态不允许签到", entity.get("error"));
+        assertEquals("CHECKED_IN", entity.get("currentStatus"));
+    }
+
+    @Test
+    void checkInNotAvailableShouldReturn409() {
+        presenter.checkInNotAvailable("已过时段结束时间，无法签到");
+
+        Response response = presenter.getResponse();
+        assertEquals(409, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        var entity = (java.util.Map<String, Object>) response.getEntity();
+        assertEquals("已过时段结束时间，无法签到", entity.get("error"));
     }
 }
