@@ -4,9 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.cleancoders.userandauth.outbound.TokenPayload;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.TokenValidationException;
+import org.cleancoders.common.outbound.TokenPayload;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.TokenValidationException;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -21,13 +21,11 @@ public class JjwtTokenService implements TokenService
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     @Override
-    public String generate(String userId, String username, String role)
+    public String generate(String userId)
     {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .subject(userId)
-                .claim("username", username)
-                .claim("role", role)
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + EXPIRATION_MS))
                 .signWith(key)
@@ -46,9 +44,7 @@ public class JjwtTokenService implements TokenService
                     .getPayload();
 
             return new TokenPayload(
-                    claims.getSubject(),
-                    claims.get("username", String.class),
-                    claims.get("role", String.class)
+                    claims.getSubject()
             );
         } catch (JwtException | IllegalArgumentException e)
         {

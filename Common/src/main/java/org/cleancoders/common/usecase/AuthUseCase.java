@@ -1,11 +1,11 @@
-package org.cleancoders.userandauth.usecase;
+package org.cleancoders.common.usecase;
 
 import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
-import org.cleancoders.userandauth.outbound.TokenPayload;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.TokenValidationException;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.common.outbound.TokenPayload;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.TokenValidationException;
+import org.cleancoders.common.outbound.UserRepository;
 
 /**
  * Abstract base class for authenticated use cases.
@@ -20,10 +20,10 @@ import org.cleancoders.userandauth.outbound.UserRepository;
  * If authentication or authorization fails, the corresponding presenter method
  * is called and {@code execute()} returns {@code null}.
  *
- * @param <R> the request type, must implement {@link AuthRequest}
- * @param <O> the output type returned by {@link #execute(AuthRequest)}
+ * @param <R> the request type, must implement {@link Request}
+ * @param <O> the output type returned by {@link #execute(Request)}
  */
-public abstract class AuthUseCase<R extends AuthUseCase.AuthRequest, O>
+public abstract class AuthUseCase<R extends AuthUseCase.Request, O>
 {
 
     @Inject
@@ -32,30 +32,8 @@ public abstract class AuthUseCase<R extends AuthUseCase.AuthRequest, O>
     @Inject
     public UserRepository userRepo;
 
-    /**
-     * Contract for request types that carry a JWT token.
-     */
-    public interface AuthRequest
-    {
-        String token();
-    }
-
-    /**
-     * Presenter interface for auth-related error branches.
-     * Leaf use cases extend this with their own success/error branches.
-     */
-    public interface Presenter
-    {
-        void invalidToken();
-
-        void userNotFound();
-    }
-
-    /**
-     * Returns the presenter instance for this use case.
-     * Implemented by leaf classes (which hold the injected presenter).
-     */
-    protected abstract Presenter getPresenter();
+    @Inject
+    public Presenter presenter;
 
     /**
      * Template method: authenticate → authorize → doExecute.
@@ -93,14 +71,14 @@ public abstract class AuthUseCase<R extends AuthUseCase.AuthRequest, O>
             payload = tokenService.validate(token);
         } catch (TokenValidationException e)
         {
-            getPresenter().invalidToken();
+            presenter.invalidToken();
             return null;
         }
 
         var user = userRepo.findById(payload.userId());
         if (user.isEmpty())
         {
-            getPresenter().userNotFound();
+            presenter.userNotFound();
             return null;
         }
 
@@ -128,4 +106,23 @@ public abstract class AuthUseCase<R extends AuthUseCase.AuthRequest, O>
      * @return the output of the use case
      */
     protected abstract O doExecute(User user, R request);
+
+    /**
+     * Contract for request types that carry a JWT token.
+     */
+    public interface Request
+    {
+        String token();
+    }
+
+    /**
+     * Presenter interface for auth-related error branches.
+     * Leaf use cases extend this with their own success/error branches.
+     */
+    public interface Presenter
+    {
+        void invalidToken();
+
+        void userNotFound();
+    }
 }

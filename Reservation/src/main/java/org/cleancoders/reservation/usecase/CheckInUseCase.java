@@ -2,15 +2,15 @@ package org.cleancoders.reservation.usecase;
 
 import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.Seat;
-import org.cleancoders.seatandroom.domain.TimeSlot;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.usecase.AuthUseCase;
-import org.cleancoders.userandauth.usecase.StudentAuthUseCase;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +26,8 @@ import java.time.LocalTime;
  *   <li>当前时间已过时段结束：不可签到</li>
  * </ul>
  */
-public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, CheckInUseCase.Output> {
+public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, CheckInUseCase.Output>
+{
 
     @Inject
     protected Presenter presenter;
@@ -40,48 +41,23 @@ public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, C
     @Inject
     protected SeatRepository seatRepo;
 
-    // --- Presenter ---
-
-    public interface Presenter extends StudentAuthUseCase.StudentPresenter {
-        void success(String reservationId, String seatNumber, String timeSlot);
-
-        void reservationNotFound(String reservationId);
-
-        void notYourReservation();
-
-        void invalidStatus(ReservationStatus currentStatus);
-
-        void checkInNotAvailable(String reason);
-    }
-
-    @Override
-    protected StudentPresenter getPresenter() {
-        return presenter;
+    /**
+     * Returns the current time. Exposed as a protected method for testability.
+     */
+    protected LocalDateTime getCurrentTime()
+    {
+        return LocalDateTime.now();
     }
 
     // --- Request / Output ---
 
-    public record Request(String token, String reservationId)
-            implements AuthUseCase.AuthRequest {
-    }
-
-    public record Output(String reservationId) {
-    }
-
-    /**
-     * Returns the current time. Exposed as a protected method for testability.
-     */
-    protected LocalDateTime getCurrentTime() {
-        return LocalDateTime.now();
-    }
-
-    // --- Business Logic ---
-
     @Override
-    protected Output doExecute(User user, Request req) {
+    protected Output doExecute(User user, Request req)
+    {
         // 1. Find reservation
         var reservationOpt = reservationRepo.findById(req.reservationId());
-        if (reservationOpt.isEmpty()) {
+        if (reservationOpt.isEmpty())
+        {
             presenter.reservationNotFound(req.reservationId());
             return null;
         }
@@ -89,20 +65,23 @@ public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, C
         Reservation reservation = reservationOpt.get();
 
         // 2. Check ownership
-        if (!reservation.userId().equals(user.id())) {
+        if (!reservation.userId().equals(user.id()))
+        {
             presenter.notYourReservation();
             return null;
         }
 
         // 3. Check status is RESERVED
-        if (reservation.status() != ReservationStatus.RESERVED) {
+        if (reservation.status() != ReservationStatus.RESERVED)
+        {
             presenter.invalidStatus(reservation.status());
             return null;
         }
 
         // 4. Get time slot
         var timeSlotOpt = timeSlotRepo.findById(reservation.timeSlotId());
-        if (timeSlotOpt.isEmpty()) {
+        if (timeSlotOpt.isEmpty())
+        {
             presenter.reservationNotFound(req.reservationId());
             return null;
         }
@@ -118,12 +97,14 @@ public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, C
         LocalDateTime slotStartDateTime = LocalDateTime.of(date, slotStart);
         LocalDateTime slotEndDateTime = LocalDateTime.of(date, slotEnd);
 
-        if (now.isAfter(slotEndDateTime)) {
+        if (now.isAfter(slotEndDateTime))
+        {
             presenter.checkInNotAvailable("已过时段结束时间，无法签到");
             return null;
         }
 
-        if (now.isBefore(slotStartDateTime)) {
+        if (now.isBefore(slotStartDateTime))
+        {
             // Case 1: before slot — check-in not yet available
             presenter.checkInNotAvailable("时段尚未开始，请在时段开始后 30 分钟内签到");
             return null;
@@ -140,5 +121,29 @@ public class CheckInUseCase extends StudentAuthUseCase<CheckInUseCase.Request, C
 
         presenter.success(reservation.id(), seatNumber, timeSlot.label());
         return new Output(reservation.id());
+    }
+
+    public interface Presenter
+    {
+        void success(String reservationId, String seatNumber, String timeSlot);
+
+        void reservationNotFound(String reservationId);
+
+        void notYourReservation();
+
+        void invalidStatus(ReservationStatus currentStatus);
+
+        void checkInNotAvailable(String reason);
+    }
+
+    public record Request(String token, String reservationId)
+            implements AuthUseCase.Request
+    {
+    }
+
+    // --- Business Logic ---
+
+    public record Output(String reservationId)
+    {
     }
 }

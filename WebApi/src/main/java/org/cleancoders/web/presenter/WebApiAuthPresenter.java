@@ -15,10 +15,11 @@ import org.cleancoders.web.dto.common.ErrorResponse;
 import org.cleancoders.web.dto.common.UserResponse;
 
 @Singleton
-public class WebApiAuthPresenter implements LoginUseCase.Presenter, RegisterUseCase.Presenter, GetMeUseCase.Presenter
+public class WebApiAuthPresenter extends WebApiCommonPresenter implements
+        LoginUseCase.Presenter,
+        RegisterUseCase.Presenter,
+        GetMeUseCase.Presenter
 {
-
-    private final ThreadLocal<Response> current = new ThreadLocal<>();
 
     // --- LoginUseCase.Presenter ---
 
@@ -39,12 +40,6 @@ public class WebApiAuthPresenter implements LoginUseCase.Presenter, RegisterUseC
     public void invalidCredentials()
     {
         current.set(Response.status(401).entity(new ErrorResponse("Invalid credentials")).build());
-    }
-
-    @Override
-    public void userNotFound()
-    {
-        current.set(Response.status(404).entity(new ErrorResponse("User not found")).build());
     }
 
     // --- RegisterUseCase.Presenter ---
@@ -71,21 +66,8 @@ public class WebApiAuthPresenter implements LoginUseCase.Presenter, RegisterUseC
         current.set(Response.ok(new MeResponse(toUserResponse(user))).build());
     }
 
-    @Override
-    public void invalidToken()
-    {
-        current.set(Response.status(401).entity(new ErrorResponse("Invalid or expired token")).build());
-    }
-
-    // ---
-
     private UserResponse toUserResponse(User user)
     {
         return new UserResponse(user.id(), user.username(), user.role(), user.name(), user.email());
-    }
-
-    public Response getResponse()
-    {
-        return current.get();
     }
 }

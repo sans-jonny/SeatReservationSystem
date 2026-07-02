@@ -1,4 +1,4 @@
-package org.cleancoders.reservation.usecase;
+package org.cleancoders.common_reservation_seatandroom_test_infrastructure;
 
 import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
@@ -6,11 +6,11 @@ import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepositor
 import java.util.List;
 import java.util.Optional;
 
-class StubTimeSlotRepo implements TimeSlotRepository
+public class StubTimeSlotRepo implements TimeSlotRepository
 {
     private final java.util.Map<String, TimeSlot> slots = new java.util.HashMap<>();
 
-    void addTimeSlot(TimeSlot slot)
+    public void addTimeSlot(TimeSlot slot)
     {
         slots.put(slot.id(), slot);
     }

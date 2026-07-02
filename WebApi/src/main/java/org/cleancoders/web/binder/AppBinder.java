@@ -1,6 +1,10 @@
 package org.cleancoders.web.binder;
 
 import jakarta.inject.Singleton;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.infrastructure.persistence.InMemoryReservationRepo;
 import org.cleancoders.infrastructure.persistence.InMemorySeatRepo;
 import org.cleancoders.infrastructure.persistence.InMemoryTimeSlotRepo;
@@ -10,11 +14,7 @@ import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.reservation.outbound.ReservationRepository;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;

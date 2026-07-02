@@ -1,4 +1,4 @@
-package org.cleancoders.seatandroom.domain;
+package org.cleancoders.common_reservation_seatAndRoom.domain;
 
 /**
  * A seat within a study room.
