@@ -3,9 +3,13 @@ package org.cleancoders.web.binder;
 import jakarta.inject.Singleton;
 import org.cleancoders.common.outbound.TokenService;
 import org.cleancoders.common.outbound.UserRepository;
+import org.cleancoders.common.usecase.AdminAuthUseCase;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.infrastructure.persistence.InMemoryReservationRepo;
+import org.cleancoders.infrastructure.persistence.InMemoryRoomRepo;
 import org.cleancoders.infrastructure.persistence.InMemorySeatRepo;
 import org.cleancoders.infrastructure.persistence.InMemoryTimeSlotRepo;
 import org.cleancoders.infrastructure.persistence.InMemoryUserRepo;
@@ -14,12 +18,16 @@ import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.reservation.outbound.ReservationRepository;
 import org.cleancoders.reservation.usecase.CheckInUseCase;
 import org.cleancoders.reservation.usecase.ReserveUseCase;
+import org.cleancoders.seatandroom.outbound.RoomRepository;
+import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
+import org.cleancoders.web.presenter.WebApiCommonPresenter;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
+import org.cleancoders.web.presenter.WebApiRoomPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 /**
@@ -43,11 +51,16 @@ public class AppBinder extends AbstractBinder
         bind(GetMeUseCase.class).to(GetMeUseCase.class);
 
         // === Presenters (instance binding: UseCases and AuthResource share same ThreadLocal) ===
-        WebApiAuthPresenter presenterInstance = new WebApiAuthPresenter();
-        bind(presenterInstance).to(WebApiAuthPresenter.class);
-        bind(presenterInstance).to(LoginUseCase.Presenter.class);
-        bind(presenterInstance).to(RegisterUseCase.Presenter.class);
-        bind(presenterInstance).to(GetMeUseCase.Presenter.class);
+        WebApiAuthPresenter authPresenter = new WebApiAuthPresenter();
+        bind(authPresenter).to(WebApiAuthPresenter.class);
+        bind(authPresenter).to(LoginUseCase.Presenter.class);
+        bind(authPresenter).to(RegisterUseCase.Presenter.class);
+        bind(authPresenter).to(GetMeUseCase.Presenter.class);
+        WebApiCommonPresenter commonPresenter = new WebApiAuthPresenter();
+        bind(commonPresenter).to(WebApiCommonPresenter.class);
+        bind(commonPresenter).to(StudentAuthUseCase.Presenter.class);
+        bind(commonPresenter).to(AdminAuthUseCase.Presenter.class);
+        bind(commonPresenter).to(AuthUseCase.Presenter.class);
 
         // === Infrastructure → Outbound ===
         bind(InMemoryUserRepo.class).to(UserRepository.class).in(Singleton.class);
@@ -57,6 +70,15 @@ public class AppBinder extends AbstractBinder
         // === SeatAndRoom ===
         bind(InMemorySeatRepo.class).to(SeatRepository.class).in(Singleton.class);
         bind(InMemoryTimeSlotRepo.class).to(TimeSlotRepository.class).in(Singleton.class);
+        bind(InMemoryRoomRepo.class).to(RoomRepository.class).in(Singleton.class);
+
+        // === SeatAndRoom UseCases ===
+        bind(ListRoomsUseCase.class).to(ListRoomsUseCase.class);
+
+        // === SeatAndRoom Presenters ===
+        WebApiRoomPresenter roomPresenterInstance = new WebApiRoomPresenter();
+        bind(roomPresenterInstance).to(WebApiRoomPresenter.class);
+        bind(roomPresenterInstance).to(ListRoomsUseCase.Presenter.class);
 
         // === Reservation UseCases ===
         bind(ReserveUseCase.class).to(ReserveUseCase.class);
