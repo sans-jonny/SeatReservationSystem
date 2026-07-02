@@ -23,6 +23,7 @@ import org.cleancoders.seatandroom.domain.StudyRoom;
 import org.cleancoders.seatandroom.outbound.RoomRepository;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.ListSeatsUseCase;
+import org.cleancoders.seatandroom.usecase.DeleteRoomUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
@@ -80,11 +81,13 @@ class AdminResourceIntegrationTest extends JerseyTest
                 bind(ListSeatsUseCase.class).to(ListSeatsUseCase.class);
                 bind(ManageRoomsUseCase.class).to(ManageRoomsUseCase.class);
                 bind(UpdateRoomUseCase.class).to(UpdateRoomUseCase.class);
+                bind(DeleteRoomUseCase.class).to(DeleteRoomUseCase.class);
 
                 bind(roomPresenter).to(ListRoomsUseCase.Presenter.class);
                 bind(roomPresenter).to(ListSeatsUseCase.Presenter.class);
                 bind(adminPresenter).to(ManageRoomsUseCase.Presenter.class);
                 bind(adminPresenter).to(UpdateRoomUseCase.Presenter.class);
+                bind(adminPresenter).to(DeleteRoomUseCase.Presenter.class);
                 bind(adminPresenter).to(AdminAuthUseCase.Presenter.class);
                 bind(adminPresenter).to(AuthUseCase.Presenter.class);
             }
@@ -258,6 +261,72 @@ class AdminResourceIntegrationTest extends JerseyTest
                 .request(MediaType.APPLICATION_JSON)
                 .cookie("Authorization", studentToken)
                 .put(Entity.json(new CreateRoomRequest("自习室F", "综合楼二楼", 20)));
+
+        assertEquals(403, response.getStatus());
+    }
+
+    // --- delete room tests ---
+
+    @Test
+    void shouldReturn200WhenAdminDeletesRoom()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .delete();
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("自习室已删除", body.get("message"));
+        assertEquals("room-1", body.get("roomId"));
+
+        // Verify room is now CLOSED
+        StudyRoom room = roomRepo.findById("room-1").get();
+        assertEquals(RoomStatus.CLOSED, room.status());
+    }
+
+    @Test
+    void shouldReturn404WhenDeletingNonexistentRoom()
+    {
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/nonexistent")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .delete();
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    void shouldReturn409WhenDeletingAlreadyClosedRoom()
+    {
+        roomRepo.save(new StudyRoom("room-closed", "已关闭", "三楼", 10, RoomStatus.CLOSED));
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/room-closed")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .delete();
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void shouldReturn403WhenStudentDeletesRoom()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        String studentToken = tokenService.generate("student-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", studentToken)
+                .delete();
 
         assertEquals(403, response.getStatus());
     }

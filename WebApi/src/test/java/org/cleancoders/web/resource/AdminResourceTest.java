@@ -3,6 +3,7 @@ package org.cleancoders.web.resource;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.seatandroom.domain.RoomStatus;
 import org.cleancoders.seatandroom.domain.StudyRoom;
+import org.cleancoders.seatandroom.usecase.DeleteRoomUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
@@ -25,6 +26,9 @@ class AdminResourceTest
     private boolean updateExecuteCalled;
     private UpdateRoomUseCase.Request lastUpdateRequest;
     private UpdateRoomUseCase.Output updateOutput;
+    private boolean deleteExecuteCalled;
+    private DeleteRoomUseCase.Request lastDeleteRequest;
+    private DeleteRoomUseCase.Output deleteOutput;
 
     @BeforeEach
     void setUp()
@@ -34,6 +38,8 @@ class AdminResourceTest
         lastCreateRequest = null;
         updateExecuteCalled = false;
         lastUpdateRequest = null;
+        deleteExecuteCalled = false;
+        lastDeleteRequest = null;
 
         resource = new AdminResource();
         resource.presenter = presenter;
@@ -55,6 +61,16 @@ class AdminResourceTest
                 updateExecuteCalled = true;
                 lastUpdateRequest = request;
                 return updateOutput;
+            }
+        };
+        resource.deleteRoomUseCase = new DeleteRoomUseCase()
+        {
+            @Override
+            public Output execute(Request request)
+            {
+                deleteExecuteCalled = true;
+                lastDeleteRequest = request;
+                return deleteOutput;
             }
         };
     }
@@ -190,6 +206,55 @@ class AdminResourceTest
 
         Response response = resource.updateRoom("jwt.token.here", "room-1",
                 new CreateRoomRequest("自习室B", "图书馆一楼", 30));
+
+        assertEquals(409, response.getStatus());
+    }
+
+    // --- delete room tests ---
+
+    @Test
+    void deleteRoomShouldDelegateToUseCase()
+    {
+        deleteOutput = new DeleteRoomUseCase.Output("room-1");
+        presenter.deleteSuccess("room-1");
+
+        Response response = resource.deleteRoom("jwt.token.here", "room-1");
+
+        assertTrue(deleteExecuteCalled);
+        assertEquals("jwt.token.here", lastDeleteRequest.token());
+        assertEquals("room-1", lastDeleteRequest.roomId());
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void deleteRoomShouldReturn200OnSuccess()
+    {
+        deleteOutput = new DeleteRoomUseCase.Output("room-1");
+        presenter.deleteSuccess("room-1");
+
+        Response response = resource.deleteRoom("jwt.token.here", "room-1");
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void deleteRoomShouldReturn404WhenRoomNotFound()
+    {
+        deleteOutput = null;
+        presenter.roomNotFound("nonexistent");
+
+        Response response = resource.deleteRoom("jwt.token.here", "nonexistent");
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    void deleteRoomShouldReturn409WhenAlreadyClosed()
+    {
+        deleteOutput = null;
+        presenter.roomAlreadyClosed("room-closed");
+
+        Response response = resource.deleteRoom("jwt.token.here", "room-closed");
 
         assertEquals(409, response.getStatus());
     }

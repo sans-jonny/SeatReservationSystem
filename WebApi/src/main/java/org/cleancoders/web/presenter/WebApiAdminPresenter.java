@@ -3,6 +3,7 @@ package org.cleancoders.web.presenter;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.seatandroom.domain.StudyRoom;
+import org.cleancoders.seatandroom.usecase.DeleteRoomUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.room.RoomResponse;
@@ -10,14 +11,15 @@ import org.cleancoders.web.dto.room.RoomResponse;
 import java.util.Map;
 
 /**
- * WebApi presenter for admin use cases ({@link ManageRoomsUseCase}, {@link UpdateRoomUseCase}).
+ * WebApi presenter for admin use cases ({@link ManageRoomsUseCase}, {@link UpdateRoomUseCase}, {@link DeleteRoomUseCase}).
  * Extends {@link WebApiCommonPresenter} to inherit auth error branches
  * (401 invalid token, 404 user not found, 403 forbidden).
  */
 @Singleton
 public class WebApiAdminPresenter extends WebApiCommonPresenter implements
         ManageRoomsUseCase.Presenter,
-        UpdateRoomUseCase.Presenter
+        UpdateRoomUseCase.Presenter,
+        DeleteRoomUseCase.Presenter
 {
 
     @Override
@@ -50,6 +52,24 @@ public class WebApiAdminPresenter extends WebApiCommonPresenter implements
     {
         current.set(Response.status(404).entity(Map.of(
                 "error", "自习室不存在",
+                "roomId", roomId
+        )).build());
+    }
+
+    @Override
+    public void deleteSuccess(String roomId)
+    {
+        current.set(Response.status(200).entity(Map.of(
+                "message", "自习室已删除",
+                "roomId", roomId
+        )).build());
+    }
+
+    @Override
+    public void roomAlreadyClosed(String roomId)
+    {
+        current.set(Response.status(409).entity(Map.of(
+                "error", "自习室已处于关闭状态",
                 "roomId", roomId
         )).build());
     }

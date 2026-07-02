@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cleancoders.seatandroom.usecase.DeleteRoomUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
@@ -36,6 +38,9 @@ public class AdminResource
 
     @Inject
     UpdateRoomUseCase updateRoomUseCase;
+
+    @Inject
+    DeleteRoomUseCase deleteRoomUseCase;
 
     @Inject
     WebApiAdminPresenter presenter;
@@ -84,6 +89,27 @@ public class AdminResource
     {
         updateRoomUseCase.execute(new UpdateRoomUseCase.Request(
                 authCookie, roomId, input.name(), input.location(), input.capacity()));
+        return presenter.getResponse();
+    }
+
+    @DELETE
+    @Path("/rooms/{id}")
+    @Operation(summary = "删除自习室 (UC-06)", description = "管理员将自习室状态标记为 CLOSED（软删除）。已处于 CLOSED 状态时返回 409。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "删除成功"),
+            @ApiResponse(responseCode = "401", description = "Token 无效或已过期",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "权限不足（非管理员角色）",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "自习室不存在"),
+            @ApiResponse(responseCode = "409", description = "自习室已处于关闭状态")
+    })
+    public Response deleteRoom(
+            @CookieParam("Authorization") String authCookie,
+            @Parameter(description = "自习室ID", required = true, example = "room-1")
+            @PathParam("id") String roomId)
+    {
+        deleteRoomUseCase.execute(new DeleteRoomUseCase.Request(authCookie, roomId));
         return presenter.getResponse();
     }
 }
