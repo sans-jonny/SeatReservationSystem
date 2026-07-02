@@ -4,13 +4,13 @@ import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.Seat;
-import org.cleancoders.seatandroom.domain.TimeSlot;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.usecase.AuthUseCase;
-import org.cleancoders.userandauth.usecase.StudentAuthUseCase;
 
 /**
  * UC-11: 取消预约。
@@ -38,7 +38,7 @@ public class CancelReservationUseCase extends StudentAuthUseCase<CancelReservati
 
     // --- Presenter ---
 
-    public interface Presenter extends StudentAuthUseCase.StudentPresenter {
+    public interface Presenter {
         void success(String reservationId, String seatNumber, String timeSlot);
 
         void reservationNotFound(String reservationId);
@@ -48,15 +48,10 @@ public class CancelReservationUseCase extends StudentAuthUseCase<CancelReservati
         void invalidStatus(ReservationStatus currentStatus);
     }
 
-    @Override
-    protected StudentPresenter getPresenter() {
-        return presenter;
-    }
-
     // --- Request / Output ---
 
     public record Request(String token, String reservationId)
-            implements AuthUseCase.AuthRequest {
+            implements AuthUseCase.Request {
     }
 
     public record Output(String reservationId) {

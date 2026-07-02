@@ -11,7 +11,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.usecase.ManageReservationsUseCase;
-import org.cleancoders.web.dto.ErrorResponse;
+import org.cleancoders.web.dto.common.ErrorResponse;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
 
 @Path("/admin")

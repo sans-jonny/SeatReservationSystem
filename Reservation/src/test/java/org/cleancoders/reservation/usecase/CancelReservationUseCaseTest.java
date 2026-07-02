@@ -2,18 +2,20 @@ package org.cleancoders.reservation.usecase;
 
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
+import org.cleancoders.common.outbound.TokenPayload;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.TokenValidationException;
+import org.cleancoders.common.outbound.UserRepository;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.SeatStatus;
+import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.Seat;
-import org.cleancoders.seatandroom.domain.SeatStatus;
-import org.cleancoders.seatandroom.domain.TimeSlot;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.outbound.TokenPayload;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.TokenValidationException;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,6 +60,8 @@ class CancelReservationUseCaseTest {
         useCase.seatRepo = seatRepo;
         useCase.timeSlotRepo = timeSlotRepo;
         useCase.presenter = presenter;
+        ((StudentAuthUseCase<?, ?>) useCase).presenter = presenter;
+        ((AuthUseCase<?, ?>) useCase).presenter = presenter;
 
         userRepo.addUser(new User(STUDENT_ID, "alice", "hashed", UserRole.STUDENT, "Alice", "a@b.com"));
         userRepo.addUser(new User("admin-1", "bob", "hashed", UserRole.ADMIN, "Bob", "b@b.com"));
@@ -149,8 +153,8 @@ class CancelReservationUseCaseTest {
 
     static class StubTokenService implements TokenService {
         @Override
-        public String generate(String userId, String username, String role) {
-            return "jwt:" + userId + ":" + username + ":" + role;
+        public String generate(String userId) {
+            return "jwt:" + userId;
         }
 
         @Override
@@ -159,38 +163,55 @@ class CancelReservationUseCaseTest {
                 throw new TokenValidationException("Invalid token");
             }
             String[] parts = token.split(":");
-            if (parts.length != 4) throw new TokenValidationException("Invalid token format");
-            return new TokenPayload(parts[1], parts[2], parts[3]);
+            if (parts.length != 4)
+                throw new TokenValidationException("Invalid token format");
+            return new TokenPayload(parts[1]);
         }
     }
 
     static class StubUserRepo implements UserRepository {
         private final java.util.Map<String, User> users = new java.util.HashMap<>();
+
         void addUser(User user) { users.put(user.id(), user); }
-        @Override public Optional<User> findByUsername(String u) { return users.values().stream().filter(x -> x.username().equals(u)).findFirst(); }
-        @Override public Optional<User> findById(String id) { return Optional.ofNullable(users.get(id)); }
-        @Override public User save(User user) { users.put(user.id(), user); return user; }
+
+        @Override
+        public Optional<User> findByUsername(String u) {
+            return users.values().stream().filter(x -> x.username().equals(u)).findFirst();
+        }
+
+        @Override
+        public Optional<User> findById(String id) { return Optional.ofNullable(users.get(id)); }
+
+        @Override
+        public User save(User user) { users.put(user.id(), user); return user; }
     }
 
     static class StubReservationRepo implements ReservationRepository {
         private final java.util.Map<String, Reservation> m = new java.util.HashMap<>();
+
         void addReservation(Reservation r) { m.put(r.id(), r); }
-        @Override public Reservation save(Reservation r) { m.put(r.id(), r); return r; }
-        @Override public Optional<Reservation> findById(String id) { return Optional.ofNullable(m.get(id)); }
-        @Override public Optional<Reservation> findByUserIdAndDateAndTimeSlotIdAndStatusIn(
+
+        @Override
+        public Reservation save(Reservation r) { m.put(r.id(), r); return r; }
+
+        @Override
+        public Optional<Reservation> findById(String id) { return Optional.ofNullable(m.get(id)); }
+
+        @Override
+        public Optional<Reservation> findByUserIdAndDateAndTimeSlotIdAndStatusIn(
                 String uid, LocalDate d, String ts, Set<ReservationStatus> ss) {
             return m.values().stream().filter(r -> r.userId().equals(uid) && r.date().equals(d) && r.timeSlotId().equals(ts) && ss.contains(r.status())).findFirst();
         }
-        @Override public Optional<Reservation> findBySeatIdAndDateAndTimeSlotIdAndStatusIn(
+
+        @Override
+        public Optional<Reservation> findBySeatIdAndDateAndTimeSlotIdAndStatusIn(
                 String sid, LocalDate d, String ts, Set<ReservationStatus> ss) {
             return m.values().stream().filter(r -> r.seatId().equals(sid) && r.date().equals(d) && r.timeSlotId().equals(ts) && ss.contains(r.status())).findFirst();
         }
 
         @Override
         public List<Reservation> findByUserId(String userId) {
-            return m.values().stream()
-                    .filter(r -> r.userId().equals(userId))
-                    .toList();
+            return m.values().stream().filter(r -> r.userId().equals(userId)).toList();
         }
 
         @Override
@@ -201,20 +222,38 @@ class CancelReservationUseCaseTest {
 
     static class StubSeatRepo implements SeatRepository {
         private final java.util.Map<String, Seat> seats = new java.util.HashMap<>();
+
         void addSeat(Seat s) { seats.put(s.id(), s); }
-        @Override public Optional<Seat> findById(String id) { return Optional.ofNullable(seats.get(id)); }
-        @Override public Seat save(Seat s) { seats.put(s.id(), s); return s; }
-        @Override public List<Seat> findByRoomId(String rid) { return seats.values().stream().filter(s -> s.roomId().equals(rid)).toList(); }
+
+        @Override
+        public Optional<Seat> findById(String id) { return Optional.ofNullable(seats.get(id)); }
+
+        @Override
+        public Seat save(Seat s) { seats.put(s.id(), s); return s; }
+
+        @Override
+        public List<Seat> findByRoomId(String rid) {
+            return seats.values().stream().filter(s -> s.roomId().equals(rid)).toList();
+        }
     }
 
     static class StubTimeSlotRepo implements TimeSlotRepository {
         private final java.util.Map<String, TimeSlot> slots = new java.util.HashMap<>();
+
         void addTimeSlot(TimeSlot ts) { slots.put(ts.id(), ts); }
-        @Override public Optional<TimeSlot> findById(String id) { return Optional.ofNullable(slots.get(id)); }
-        @Override public List<TimeSlot> findAll() { return List.copyOf(slots.values()); }
+
+        @Override
+        public Optional<TimeSlot> findById(String id) { return Optional.ofNullable(slots.get(id)); }
+
+        @Override
+        public List<TimeSlot> findAll() { return List.copyOf(slots.values()); }
     }
 
-    static class StubPresenter implements CancelReservationUseCase.Presenter {
+    static class StubPresenter implements
+            CancelReservationUseCase.Presenter,
+            StudentAuthUseCase.Presenter,
+            AuthUseCase.Presenter
+    {
         AtomicReference<String> successReservationId = new AtomicReference<>();
         AtomicReference<String> successSeatNumber = new AtomicReference<>();
         AtomicReference<String> successTimeSlot = new AtomicReference<>();
@@ -222,12 +261,32 @@ class CancelReservationUseCaseTest {
                 invalidTokenCalled, userNotFoundCalled, forbiddenCalled;
         AtomicReference<ReservationStatus> invalidStatusCurrentStatus = new AtomicReference<>();
 
-        @Override public void success(String rid, String sn, String ts) { successReservationId.set(rid); successSeatNumber.set(sn); successTimeSlot.set(ts); }
-        @Override public void reservationNotFound(String rid) { reservationNotFoundCalled = true; }
-        @Override public void notYourReservation() { notYourReservationCalled = true; }
-        @Override public void invalidStatus(ReservationStatus s) { invalidStatusCalled = true; invalidStatusCurrentStatus.set(s); }
-        @Override public void forbidden() { forbiddenCalled = true; }
-        @Override public void invalidToken() { invalidTokenCalled = true; }
-        @Override public void userNotFound() { userNotFoundCalled = true; }
+        @Override
+        public void success(String rid, String sn, String ts) {
+            successReservationId.set(rid);
+            successSeatNumber.set(sn);
+            successTimeSlot.set(ts);
+        }
+
+        @Override
+        public void reservationNotFound(String rid) { reservationNotFoundCalled = true; }
+
+        @Override
+        public void notYourReservation() { notYourReservationCalled = true; }
+
+        @Override
+        public void invalidStatus(ReservationStatus s) {
+            invalidStatusCalled = true;
+            invalidStatusCurrentStatus.set(s);
+        }
+
+        @Override
+        public void forbidden() { forbiddenCalled = true; }
+
+        @Override
+        public void invalidToken() { invalidTokenCalled = true; }
+
+        @Override
+        public void userNotFound() { userNotFoundCalled = true; }
     }
 }

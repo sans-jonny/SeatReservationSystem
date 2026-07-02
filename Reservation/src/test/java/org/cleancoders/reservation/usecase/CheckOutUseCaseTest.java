@@ -2,18 +2,20 @@ package org.cleancoders.reservation.usecase;
 
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
+import org.cleancoders.common.outbound.TokenPayload;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.TokenValidationException;
+import org.cleancoders.common.outbound.UserRepository;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.SeatStatus;
+import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.Seat;
-import org.cleancoders.seatandroom.domain.SeatStatus;
-import org.cleancoders.seatandroom.domain.TimeSlot;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.outbound.TokenPayload;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.TokenValidationException;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +63,8 @@ class CheckOutUseCaseTest {
         useCase.seatRepo = seatRepo;
         useCase.timeSlotRepo = timeSlotRepo;
         useCase.presenter = presenter;
+        ((StudentAuthUseCase<?, ?>) useCase).presenter = presenter;
+        ((AuthUseCase<?, ?>) useCase).presenter = presenter;
 
         // Seed data
         userRepo.addUser(new User(STUDENT_ID, "alice", "hashed", UserRole.STUDENT, "Alice", "a@b.com"));
@@ -115,7 +119,6 @@ class CheckOutUseCaseTest {
 
     @Test
     void shouldRejectReservationNotCheckedIn() {
-        // Status is RESERVED, not CHECKED_IN
         Reservation res = new Reservation("res-1", STUDENT_ID, SEAT_ID, TIME_SLOT_ID, DATE);
         reservationRepo.addReservation(res);
 
@@ -130,7 +133,7 @@ class CheckOutUseCaseTest {
     void shouldRejectAlreadyCheckedOut() {
         Reservation res = new Reservation("res-1", STUDENT_ID, SEAT_ID, TIME_SLOT_ID, DATE);
         res.checkIn();
-        res.checkOut(); // already checked out
+        res.checkOut();
         reservationRepo.addReservation(res);
 
         var output = useCase.execute(new CheckOutUseCase.Request(STUDENT_TOKEN, "res-1"));
@@ -177,8 +180,8 @@ class CheckOutUseCaseTest {
 
     static class StubTokenService implements TokenService {
         @Override
-        public String generate(String userId, String username, String role) {
-            return "jwt:" + userId + ":" + username + ":" + role;
+        public String generate(String userId) {
+            return "jwt:" + userId;
         }
 
         @Override
@@ -190,7 +193,7 @@ class CheckOutUseCaseTest {
             if (parts.length != 4) {
                 throw new TokenValidationException("Invalid token format");
             }
-            return new TokenPayload(parts[1], parts[2], parts[3]);
+            return new TokenPayload(parts[1]);
         }
     }
 
@@ -282,7 +285,11 @@ class CheckOutUseCaseTest {
         public List<TimeSlot> findAll() { return List.copyOf(slots.values()); }
     }
 
-    static class StubPresenter implements CheckOutUseCase.Presenter {
+    static class StubPresenter implements
+            CheckOutUseCase.Presenter,
+            StudentAuthUseCase.Presenter,
+            AuthUseCase.Presenter
+    {
         AtomicReference<String> successReservationId = new AtomicReference<>();
         AtomicReference<String> successSeatNumber = new AtomicReference<>();
         AtomicReference<String> successTimeSlot = new AtomicReference<>();

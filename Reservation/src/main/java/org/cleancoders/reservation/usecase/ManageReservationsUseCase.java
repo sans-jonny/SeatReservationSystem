@@ -3,13 +3,13 @@ package org.cleancoders.reservation.usecase;
 import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.reservation.domain.Reservation;
+import org.cleancoders.common.usecase.AdminAuthUseCase;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.TimeSlot;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.Seat;
-import org.cleancoders.seatandroom.domain.TimeSlot;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.usecase.AdminAuthUseCase;
-import org.cleancoders.userandauth.usecase.AuthUseCase;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,18 +36,13 @@ public class ManageReservationsUseCase extends AdminAuthUseCase<ManageReservatio
 
     // --- Presenter ---
 
-    public interface Presenter extends AdminAuthUseCase.AdminPresenter {
+    public interface Presenter extends AdminAuthUseCase.Presenter {
         void presentAllReservations(List<ReservationItem> items);
-    }
-
-    @Override
-    protected AdminPresenter getPresenter() {
-        return presenter;
     }
 
     // --- Request / Output ---
 
-    public record Request(String token) implements AuthUseCase.AuthRequest {
+    public record Request(String token) implements AuthUseCase.Request {
     }
 
     public record Output(List<ReservationItem> items) {
