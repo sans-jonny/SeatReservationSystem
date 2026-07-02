@@ -38,4 +38,12 @@ public class InMemoryRoomRepo implements RoomRepository
         rooms.put(room.id(), room);
         return room;
     }
+
+    @Override
+    public Optional<StudyRoom> findByName(String name)
+    {
+        return rooms.values().stream()
+                .filter(r -> r.name().equals(name))
+                .findFirst();
+    }
 }

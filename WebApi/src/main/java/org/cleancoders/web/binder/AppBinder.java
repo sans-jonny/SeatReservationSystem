@@ -17,11 +17,13 @@ import org.cleancoders.reservation.usecase.ReserveUseCase;
 import org.cleancoders.seatandroom.outbound.RoomRepository;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.ListSeatsUseCase;
+import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
+import org.cleancoders.web.presenter.WebApiAdminPresenter;
 import org.cleancoders.web.presenter.WebApiCommonPresenter;
 import org.cleancoders.web.presenter.WebApiReservationPresenter;
 import org.cleancoders.web.presenter.WebApiRoomPresenter;
@@ -67,6 +69,7 @@ public class AppBinder extends AbstractBinder
         // === UseCases ===
         bind(ListRoomsUseCase.class).to(ListRoomsUseCase.class);
         bind(ListSeatsUseCase.class).to(ListSeatsUseCase.class);
+        bind(ManageRoomsUseCase.class).to(ManageRoomsUseCase.class);
         // === Presenters ===
         WebApiRoomPresenter roomPresenterInstance = new WebApiRoomPresenter();
         bind(roomPresenterInstance).to(WebApiRoomPresenter.class);
@@ -76,6 +79,12 @@ public class AppBinder extends AbstractBinder
         bind(TestDataSeatRepo.class).to(SeatRepository.class).in(Singleton.class);
         bind(TestDataTimeSlotRepo.class).to(TimeSlotRepository.class).in(Singleton.class);
         bind(TestDataRoomRepo.class).to(RoomRepository.class).in(Singleton.class);
+
+        // === Admin ===
+        // === Presenters ===
+        WebApiAdminPresenter adminPresenterInstance = new WebApiAdminPresenter();
+        bind(adminPresenterInstance).to(WebApiAdminPresenter.class);
+        bind(adminPresenterInstance).to(ManageRoomsUseCase.Presenter.class);
 
         // === Reservation ===
         // === UseCases ===

@@ -16,4 +16,9 @@ public interface RoomRepository
     Optional<StudyRoom> findById(String id);
 
     StudyRoom save(StudyRoom room);
+
+    default Optional<StudyRoom> findByName(String name)
+    {
+        return Optional.empty();
+    }
 }
