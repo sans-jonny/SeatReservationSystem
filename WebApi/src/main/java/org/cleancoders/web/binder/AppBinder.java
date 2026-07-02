@@ -18,6 +18,7 @@ import org.cleancoders.seatandroom.outbound.RoomRepository;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.ListSeatsUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
+import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
@@ -70,6 +71,7 @@ public class AppBinder extends AbstractBinder
         bind(ListRoomsUseCase.class).to(ListRoomsUseCase.class);
         bind(ListSeatsUseCase.class).to(ListSeatsUseCase.class);
         bind(ManageRoomsUseCase.class).to(ManageRoomsUseCase.class);
+        bind(UpdateRoomUseCase.class).to(UpdateRoomUseCase.class);
         // === Presenters ===
         WebApiRoomPresenter roomPresenterInstance = new WebApiRoomPresenter();
         bind(roomPresenterInstance).to(WebApiRoomPresenter.class);
@@ -85,6 +87,7 @@ public class AppBinder extends AbstractBinder
         WebApiAdminPresenter adminPresenterInstance = new WebApiAdminPresenter();
         bind(adminPresenterInstance).to(WebApiAdminPresenter.class);
         bind(adminPresenterInstance).to(ManageRoomsUseCase.Presenter.class);
+        bind(adminPresenterInstance).to(UpdateRoomUseCase.Presenter.class);
 
         // === Reservation ===
         // === UseCases ===

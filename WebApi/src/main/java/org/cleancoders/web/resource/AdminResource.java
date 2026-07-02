@@ -1,6 +1,7 @@
 package org.cleancoders.web.resource;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,11 +11,14 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
+import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
 import org.cleancoders.web.dto.common.ErrorResponse;
 import org.cleancoders.web.dto.room.RoomResponse;
@@ -29,6 +33,9 @@ public class AdminResource
 
     @Inject
     ManageRoomsUseCase manageRoomsUseCase;
+
+    @Inject
+    UpdateRoomUseCase updateRoomUseCase;
 
     @Inject
     WebApiAdminPresenter presenter;
@@ -52,6 +59,31 @@ public class AdminResource
     {
         manageRoomsUseCase.execute(new ManageRoomsUseCase.Request(
                 authCookie, input.name(), input.location(), input.capacity()));
+        return presenter.getResponse();
+    }
+
+    @PUT
+    @Path("/rooms/{id}")
+    @Operation(summary = "更新自习室 (UC-06)", description = "管理员更新指定自习室的名称、位置和容量。自习室不存在时返回 404。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "更新成功",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = RoomResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token 无效或已过期",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "权限不足（非管理员角色）",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "自习室不存在"),
+            @ApiResponse(responseCode = "409", description = "自习室名称已存在")
+    })
+    public Response updateRoom(
+            @CookieParam("Authorization") String authCookie,
+            @Parameter(description = "自习室ID", required = true, example = "room-1")
+            @PathParam("id") String roomId,
+            CreateRoomRequest input)
+    {
+        updateRoomUseCase.execute(new UpdateRoomUseCase.Request(
+                authCookie, roomId, input.name(), input.location(), input.capacity()));
         return presenter.getResponse();
     }
 }

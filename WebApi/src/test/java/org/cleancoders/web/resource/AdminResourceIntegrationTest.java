@@ -24,6 +24,7 @@ import org.cleancoders.seatandroom.outbound.RoomRepository;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.ListSeatsUseCase;
 import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
+import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
 import org.cleancoders.web.presenter.WebApiAdminPresenter;
 import org.cleancoders.web.presenter.WebApiRoomPresenter;
@@ -78,10 +79,12 @@ class AdminResourceIntegrationTest extends JerseyTest
                 bind(ListRoomsUseCase.class).to(ListRoomsUseCase.class);
                 bind(ListSeatsUseCase.class).to(ListSeatsUseCase.class);
                 bind(ManageRoomsUseCase.class).to(ManageRoomsUseCase.class);
+                bind(UpdateRoomUseCase.class).to(UpdateRoomUseCase.class);
 
                 bind(roomPresenter).to(ListRoomsUseCase.Presenter.class);
                 bind(roomPresenter).to(ListSeatsUseCase.Presenter.class);
                 bind(adminPresenter).to(ManageRoomsUseCase.Presenter.class);
+                bind(adminPresenter).to(UpdateRoomUseCase.Presenter.class);
                 bind(adminPresenter).to(AdminAuthUseCase.Presenter.class);
                 bind(adminPresenter).to(AuthUseCase.Presenter.class);
             }
@@ -162,5 +165,100 @@ class AdminResourceIntegrationTest extends JerseyTest
                 .post(Entity.json(new CreateRoomRequest("自习室F", "综合楼二楼", 20)));
 
         assertEquals(401, response.getStatus());
+    }
+
+    // --- update room tests ---
+
+    @Test
+    void shouldReturn200WhenAdminUpdatesRoom()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .put(Entity.json(new CreateRoomRequest("自习室A-改", "图书馆一楼东", 35)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("room-1", body.get("id"));
+        assertEquals("自习室A-改", body.get("name"));
+        assertEquals("图书馆一楼东", body.get("location"));
+        assertEquals(35, body.get("capacity"));
+        assertEquals("OPEN", body.get("status"));
+    }
+
+    @Test
+    void shouldReturn404WhenUpdatingNonexistentRoom()
+    {
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/nonexistent")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .put(Entity.json(new CreateRoomRequest("自习室X", "一楼", 10)));
+
+        assertEquals(404, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("自习室不存在", body.get("error"));
+        assertEquals("nonexistent", body.get("roomId"));
+    }
+
+    @Test
+    void shouldReturn409WhenUpdatingToExistingName()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        roomRepo.save(new StudyRoom("room-2", "自习室B", "图书馆二楼", 20, RoomStatus.OPEN));
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .put(Entity.json(new CreateRoomRequest("自习室B", "新位置", 25)));
+
+        assertEquals(409, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("自习室名称已存在", body.get("error"));
+    }
+
+    @Test
+    void shouldAllowUpdatingRoomWithSameName()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        String adminToken = tokenService.generate("admin-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", adminToken)
+                .put(Entity.json(new CreateRoomRequest("自习室A", "图书馆一楼东", 40)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("自习室A", body.get("name"));
+        assertEquals("图书馆一楼东", body.get("location"));
+        assertEquals(40, body.get("capacity"));
+    }
+
+    @Test
+    void shouldReturn403WhenStudentUpdatesRoom()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+        String studentToken = tokenService.generate("student-1");
+
+        Response response = target("/admin/rooms/room-1")
+                .request(MediaType.APPLICATION_JSON)
+                .cookie("Authorization", studentToken)
+                .put(Entity.json(new CreateRoomRequest("自习室F", "综合楼二楼", 20)));
+
+        assertEquals(403, response.getStatus());
     }
 }
