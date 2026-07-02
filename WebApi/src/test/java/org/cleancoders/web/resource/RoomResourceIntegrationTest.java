@@ -4,11 +4,16 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.SeatStatus;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
 import org.cleancoders.infrastructure.persistence.InMemoryRoomRepo;
+import org.cleancoders.infrastructure.persistence.InMemorySeatRepo;
 import org.cleancoders.seatandroom.domain.RoomStatus;
 import org.cleancoders.seatandroom.domain.StudyRoom;
 import org.cleancoders.seatandroom.outbound.RoomRepository;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
+import org.cleancoders.seatandroom.usecase.ListSeatsUseCase;
 import org.cleancoders.web.presenter.WebApiRoomPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -26,11 +31,13 @@ class RoomResourceIntegrationTest extends JerseyTest
 {
 
     private InMemoryRoomRepo roomRepo;
+    private InMemorySeatRepo seatRepo;
 
     @Override
     protected Application configure()
     {
         roomRepo = new InMemoryRoomRepo();
+        seatRepo = new InMemorySeatRepo();
         WebApiRoomPresenter presenterInstance = new WebApiRoomPresenter();
 
         ResourceConfig config = new ResourceConfig();
@@ -41,9 +48,12 @@ class RoomResourceIntegrationTest extends JerseyTest
             protected void configure()
             {
                 bind(roomRepo).to(RoomRepository.class);
+                bind(seatRepo).to(SeatRepository.class);
                 bind(ListRoomsUseCase.class).to(ListRoomsUseCase.class);
+                bind(ListSeatsUseCase.class).to(ListSeatsUseCase.class);
                 bind(presenterInstance).to(WebApiRoomPresenter.class);
                 bind(presenterInstance).to(ListRoomsUseCase.Presenter.class);
+                bind(presenterInstance).to(ListSeatsUseCase.Presenter.class);
             }
         });
         return config;
@@ -61,6 +71,8 @@ class RoomResourceIntegrationTest extends JerseyTest
         super.tearDown();
     }
 
+    // --- listRooms tests ---
+
     @Test
     void shouldReturn200WithOnlyOpenRooms()
     {
@@ -72,7 +84,6 @@ class RoomResourceIntegrationTest extends JerseyTest
         Response response = target("/rooms").request(MediaType.APPLICATION_JSON).get();
 
         assertEquals(200, response.getStatus());
-        // 响应体是包装对象 {"rooms": [...]}
         Map<String, Object> body = response.readEntity(new GenericType<>()
         {
         });
@@ -100,5 +111,85 @@ class RoomResourceIntegrationTest extends JerseyTest
         @SuppressWarnings("unchecked")
         List<?> rooms = (List<?>) body.get("rooms");
         assertTrue(rooms.isEmpty());
+    }
+
+    // --- listSeats tests ---
+
+    @Test
+    void shouldReturn200WithSeatsForExistingRoom()
+    {
+        roomRepo.save(new StudyRoom("room-1", "自习室A", "图书馆一楼", 30, RoomStatus.OPEN));
+
+        Response response = target("/rooms/room-1/seats").request(MediaType.APPLICATION_JSON).get();
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("room-1", body.get("roomId"));
+        assertEquals("自习室A", body.get("roomName"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> seats = (List<Map<String, Object>>) body.get("seats");
+        assertEquals(8, seats.size());
+        // Verify seat numbers belong to room-1
+        List<String> seatNumbers = seats.stream().map(s -> (String) s.get("seatNumber")).toList();
+        assertTrue(seatNumbers.contains("A-1"));
+        assertTrue(seatNumbers.contains("A-8"));
+    }
+
+    @Test
+    void shouldReturn404WhenRoomNotFound()
+    {
+        Response response = target("/rooms/nonexistent/seats").request(MediaType.APPLICATION_JSON).get();
+
+        assertEquals(404, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("自习室不存在", body.get("error"));
+        assertEquals("nonexistent", body.get("roomId"));
+    }
+
+    @Test
+    void shouldReturn200WithSeatsOfAllStatuses()
+    {
+        roomRepo.save(new StudyRoom("room-3", "自习室C", "教学楼三楼", 15, RoomStatus.OPEN));
+        seatRepo.save(new Seat("s1", "room-3", "C-1", SeatStatus.AVAILABLE));
+        seatRepo.save(new Seat("s2", "room-3", "C-2", SeatStatus.RESERVED));
+        seatRepo.save(new Seat("s3", "room-3", "C-3", SeatStatus.OCCUPIED));
+        seatRepo.save(new Seat("s4", "room-3", "C-4", SeatStatus.MAINTENANCE));
+
+        Response response = target("/rooms/room-3/seats").request(MediaType.APPLICATION_JSON).get();
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> seats = (List<Map<String, Object>>) body.get("seats");
+        assertEquals(4, seats.size());
+
+        List<String> statuses = seats.stream().map(s -> (String) s.get("status")).toList();
+        assertTrue(statuses.contains("AVAILABLE"));
+        assertTrue(statuses.contains("RESERVED"));
+        assertTrue(statuses.contains("OCCUPIED"));
+        assertTrue(statuses.contains("MAINTENANCE"));
+    }
+
+    @Test
+    void shouldReturn200WithEmptySeatsForRoomWithNoSeats()
+    {
+        roomRepo.save(new StudyRoom("room-empty", "空自习室", "综合楼五楼", 10, RoomStatus.OPEN));
+
+        Response response = target("/rooms/room-empty/seats").request(MediaType.APPLICATION_JSON).get();
+
+        assertEquals(200, response.getStatus());
+        Map<String, Object> body = response.readEntity(new GenericType<>()
+        {
+        });
+        assertEquals("room-empty", body.get("roomId"));
+        @SuppressWarnings("unchecked")
+        List<?> seats = (List<?>) body.get("seats");
+        assertTrue(seats.isEmpty());
     }
 }
