@@ -7,7 +7,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
-import org.cleancoders.common.outbound.TokenService;
 import org.cleancoders.common.outbound.UserRepository;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
@@ -19,15 +18,11 @@ import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.seatandroom.domain.RoomStatus;
 import org.cleancoders.seatandroom.domain.StudyRoom;
 import org.cleancoders.seatandroom.outbound.RoomRepository;
-import org.cleancoders.web.binder.AdminBinder;
+import org.cleancoders.web.binder.ReservationBinder;
 import org.cleancoders.web.binder.SeatAndRoomBinder;
 import org.cleancoders.web.binder.UserAndAuthBinder;
 import org.cleancoders.web.binder.WebAppBinder;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
-import org.cleancoders.web.presenter.ResponseContext;
-import org.cleancoders.web.presenter.WebApiAdminPresenter;
-import org.cleancoders.web.presenter.WebApiAuthPresenter;
-import org.cleancoders.web.presenter.WebApiRoomPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
@@ -64,7 +59,7 @@ class AdminResourceIntegrationTest extends JerseyTest
         config.register(WebAppBinder.class);
         config.register(SeatAndRoomBinder.class);
         config.register(UserAndAuthBinder.class);
-        config.register(AdminBinder.class);
+        config.register(ReservationBinder.class);
 
         config.register(new AbstractBinder()
         {

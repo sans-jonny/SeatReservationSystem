@@ -3,7 +3,10 @@ package org.cleancoders.web;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import jakarta.ws.rs.core.Application;
-import org.cleancoders.web.binder.AppBinder;
+import org.cleancoders.web.binder.ReservationBinder;
+import org.cleancoders.web.binder.SeatAndRoomBinder;
+import org.cleancoders.web.binder.UserAndAuthBinder;
+import org.cleancoders.web.binder.WebAppBinder;
 import org.cleancoders.web.filter.CorsFilter;
 import org.cleancoders.web.resource.*;
 
@@ -36,7 +39,6 @@ public class AppConfig extends Application
         classes.add(CorsFilter.class);
         // HK2 Binder (must be registered as a class so Jersey discovers it)
         classes.add(WebAppBinder.class);
-        classes.add(AdminBinder.class);
         classes.add(ReservationBinder.class);
         classes.add(SeatAndRoomBinder.class);
         classes.add(UserAndAuthBinder.class);

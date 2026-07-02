@@ -1,6 +1,7 @@
 package org.cleancoders.web.resource;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +17,6 @@ import org.cleancoders.seatandroom.usecase.ManageRoomsUseCase;
 import org.cleancoders.seatandroom.usecase.UpdateRoomUseCase;
 import org.cleancoders.web.dto.admin.CreateRoomRequest;
 import org.cleancoders.web.dto.common.ErrorResponse;
-import org.cleancoders.web.presenter.WebApiReservationPresenter;
 import org.cleancoders.web.dto.room.RoomResponse;
 import org.cleancoders.web.presenter.ResponseContext;
 
