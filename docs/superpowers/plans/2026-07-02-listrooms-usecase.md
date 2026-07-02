@@ -31,8 +31,9 @@
 | `SeatAndRoom/src/test/java/org/cleancoders/seatandroom/usecase/ListRoomsUseCaseTest.java` | 新增 | 单元测试,用 StubRoomRepo |
 | `Infrastructure/src/main/java/org/cleancoders/infrastructure/persistence/InMemoryRoomRepo.java` | 新增 | 内存版 RoomRepository |
 | `Infrastructure/src/test/java/org/cleancoders/infrastructure/persistence/InMemoryRoomRepoTest.java` | 新增 | InMemoryRoomRepo 单元测试 |
-| `WebApi/src/main/java/org/cleancoders/web/dto/room/RoomResponse.java` | 新增 | 响应 DTO record |
-| `WebApi/src/main/java/org/cleancoders/web/presenter/WebApiRoomPresenter.java` | 新增 | 实现 ListRoomsUseCase.Presenter |
+| `WebApi/src/main/java/org/cleancoders/web/dto/room/RoomResponse.java` | 新增 | 单个自习室响应 DTO record |
+| `WebApi/src/main/java/org/cleancoders/web/dto/room/RoomListResponse.java` | 新增 | 列表包装 DTO,`rooms` 字段放 `List<RoomResponse>` |
+| `WebApi/src/main/java/org/cleancoders/web/presenter/WebApiRoomPresenter.java` | 新增 | 实现 ListRoomsUseCase.Presenter,返回 RoomListResponse 包装体 |
 | `WebApi/src/main/java/org/cleancoders/web/resource/RoomResource.java` | 新增 | JAX-RS `@Path("/rooms")` |
 | `WebApi/src/main/java/org/cleancoders/web/binder/AppBinder.java` | 修改 | 绑定 UseCase/Presenter/Repo |
 | `WebApi/src/test/java/org/cleancoders/web/resource/RoomResourceTest.java` | 新增 | Resource 单元测试 |
@@ -509,15 +510,16 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## 任务 5:RoomResponse DTO + WebApiRoomPresenter
+## 任务 5:RoomResponse / RoomListResponse DTO + WebApiRoomPresenter
 
 **文件：**
 - 新增:`WebApi/src/main/java/org/cleancoders/web/dto/room/RoomResponse.java`
+- 新增:`WebApi/src/main/java/org/cleancoders/web/dto/room/RoomListResponse.java`
 - 新增:`WebApi/src/main/java/org/cleancoders/web/presenter/WebApiRoomPresenter.java`
 
 **接口：**
 - 消费:`ListRoomsUseCase.Presenter.presentRooms(List<StudyRoom>)`(任务 3)、`StudyRoom`/`RoomStatus`(任务 1)、`WebApiPresenter`(已有基类,含 ThreadLocal `current` + `getResponse()`)。
-- 产出:`RoomResponse` DTO;`WebApiRoomPresenter`(继承 `WebApiPresenter`,实现 `ListRoomsUseCase.Presenter`)。
+- 产出:`RoomResponse` 单条 DTO;`RoomListResponse` 列表包装 DTO(`rooms` 字段);`WebApiRoomPresenter`(继承 `WebApiPresenter`,实现 `ListRoomsUseCase.Presenter`,返回 `RoomListResponse` 包装体)。
 
 - [ ] **步骤 1:创建 `RoomResponse.java`**
 
@@ -544,9 +546,29 @@ public record RoomResponse(
 }
 ```
 
-- [ ] **步骤 2:创建 `WebApiRoomPresenter.java`**
+- [ ] **步骤 2:创建 `RoomListResponse.java`**
 
-注意:`ListRoomsUseCase` 是公开用例(无 auth 分支),所以这里直接继承 `WebApiPresenter` —— 而非 `WebApiCommonPresenter`(后者会继承一堆 auth 相关接口实现,这里用不上)。
+响应体是一个包装对象 `{"rooms": [...]}`,而非裸数组。
+
+```java
+package org.cleancoders.web.dto.room;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
+
+@Schema(description = "自习室列表响应")
+public record RoomListResponse(
+        @Schema(description = "OPEN 状态自习室列表(可为空)")
+        List<RoomResponse> rooms
+)
+{
+}
+```
+
+- [ ] **步骤 3:创建 `WebApiRoomPresenter.java`**
+
+注意:`ListRoomsUseCase` 是公开用例(无 auth 分支),所以这里直接继承 `WebApiPresenter` —— 而非 `WebApiCommonPresenter`(后者会继承一堆 auth 相关接口实现,这里用不上)。响应体用 `RoomListResponse` 包装,而非裸数组。
 
 ```java
 package org.cleancoders.web.presenter;
@@ -555,6 +577,7 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.seatandroom.domain.StudyRoom;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
+import org.cleancoders.web.dto.room.RoomListResponse;
 import org.cleancoders.web.dto.room.RoomResponse;
 
 import java.util.List;
@@ -562,7 +585,8 @@ import java.util.List;
 /**
  * WebApi presenter for {@link ListRoomsUseCase}. Public use case — no auth
  * branches, so extends {@link WebApiPresenter} directly rather than
- * {@link WebApiCommonPresenter}.
+ * {@link WebApiCommonPresenter}. Response body is a {@link RoomListResponse}
+ * wrapper object ({"rooms": [...]}) rather than a bare array.
  */
 @Singleton
 public class WebApiRoomPresenter extends WebApiPresenter implements
@@ -572,27 +596,29 @@ public class WebApiRoomPresenter extends WebApiPresenter implements
     @Override
     public void presentRooms(List<StudyRoom> rooms)
     {
-        List<RoomResponse> body = rooms.stream()
+        List<RoomResponse> dtos = rooms.stream()
                 .map(r -> new RoomResponse(r.id(), r.name(), r.location(), r.capacity(), r.status()))
                 .toList();
-        current.set(Response.ok(body).build());
+        current.set(Response.ok(new RoomListResponse(dtos)).build());
     }
 }
 ```
 
-- [ ] **步骤 3:验证 WebApi 可编译**
+- [ ] **步骤 4:验证 WebApi 可编译**
 
 运行:`mvn -pl WebApi -am compile -q`
 预期:BUILD SUCCESS。
 
-- [ ] **步骤 4:提交**
+- [ ] **步骤 5:提交**
 
 ```bash
 git add WebApi/src/main/java/org/cleancoders/web/dto/room/RoomResponse.java \
+        WebApi/src/main/java/org/cleancoders/web/dto/room/RoomListResponse.java \
         WebApi/src/main/java/org/cleancoders/web/presenter/WebApiRoomPresenter.java
-git commit -m "feat(WebApi): 新增 RoomResponse DTO 与 WebApiRoomPresenter
+git commit -m "feat(WebApi): 新增 RoomResponse/RoomListResponse DTO 与 WebApiRoomPresenter
 
 公开用例 presenter,直接继承 WebApiPresenter(无 auth 分支)。
+响应体为 RoomListResponse 包装对象({\"rooms\":[...]}),非裸数组。
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -716,7 +742,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.seatandroom.usecase.ListRoomsUseCase;
-import org.cleancoders.web.dto.room.RoomResponse;
+import org.cleancoders.web.dto.room.RoomListResponse;
 import org.cleancoders.web.presenter.WebApiRoomPresenter;
 
 @Path("/rooms")
@@ -736,7 +762,7 @@ public class RoomResource
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "返回 OPEN 状态自习室列表(可为空)",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomListResponse.class)))
     })
     public Response listRooms()
     {
@@ -902,11 +928,14 @@ class RoomResourceIntegrationTest extends JerseyTest
         Response response = target("/rooms").request(MediaType.APPLICATION_JSON).get();
 
         assertEquals(200, response.getStatus());
-        List<Map<String, Object>> body = response.readEntity(new GenericType<>()
+        // 响应体是包装对象 {"rooms": [...]},从中取 rooms 数组
+        Map<String, Object> body = response.readEntity(new GenericType<>()
         {
         });
-        assertEquals(2, body.size());
-        List<String> ids = body.stream().map(m -> (String) m.get("id")).toList();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rooms = (List<Map<String, Object>>) body.get("rooms");
+        assertEquals(2, rooms.size());
+        List<String> ids = rooms.stream().map(m -> (String) m.get("id")).toList();
         assertTrue(ids.contains("r1"));
         assertTrue(ids.contains("r3"));
         assertFalse(ids.contains("r2"));
@@ -921,10 +950,12 @@ class RoomResourceIntegrationTest extends JerseyTest
         Response response = target("/rooms").request(MediaType.APPLICATION_JSON).get();
 
         assertEquals(200, response.getStatus());
-        List<?> body = response.readEntity(new GenericType<List<?>>()
+        Map<String, Object> body = response.readEntity(new GenericType<>()
         {
         });
-        assertTrue(body.isEmpty());
+        @SuppressWarnings("unchecked")
+        List<?> rooms = (List<?>) body.get("rooms");
+        assertTrue(rooms.isEmpty());
     }
 }
 ```
