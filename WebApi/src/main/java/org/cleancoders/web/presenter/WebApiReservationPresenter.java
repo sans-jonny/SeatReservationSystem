@@ -3,6 +3,8 @@ package org.cleancoders.web.presenter;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.reservation.domain.ReservationStatus;
+import org.cleancoders.reservation.usecase.CheckInUseCase;
+import org.cleancoders.reservation.usecase.ReserveUseCase;
 import org.cleancoders.reservation.usecase.*;
 import org.cleancoders.reservation.usecase.ListMyReservationsUseCase.ReservationItem;
 import org.cleancoders.web.dto.common.ErrorResponse;
@@ -12,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * WebApi presenter implementation for {@link ReserveUseCase.Presenter},
- * {@link CheckInUseCase.Presenter}, and {@link CheckOutUseCase.Presenter}.
+ * WebApi presenter implementation for {@link ReserveUseCase.Presenter}
+ * and {@link CheckInUseCase.Presenter}.
  * <p>
  * Uses {@link ResponseContext} to store the current request's {@link Response},
  * allowing the singleton presenter to serve concurrent HTTP requests safely.
@@ -63,15 +65,6 @@ public class WebApiReservationPresenter extends WebApiPresenter implements
     {
         responseContext.set(Response.status(404).entity(new SeatNotFoundResponse(
                 "座位不存在", seatId)).build());
-    }
-
-    // --- StudentAuthUseCase.Presenter (override default 403 message) ---
-
-    @Override
-    public void forbidden()
-    {
-        responseContext.set(Response.status(403).entity(new ErrorResponse(
-                "权限不足，仅学生可创建预约")).build());
     }
 
     // --- CheckInUseCase.Presenter ---
