@@ -6,12 +6,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
+import org.cleancoders.common.outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
+import org.cleancoders.common.usecase.AuthUseCase;
 import org.cleancoders.infrastructure.persistence.InMemoryUserRepo;
 import org.cleancoders.infrastructure.security.BCryptPasswordEncoder;
 import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.GetMeUseCase;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.userandauth.usecase.RegisterUseCase;
@@ -61,6 +62,7 @@ class AuthResourceIntegrationTest extends JerseyTest
                 bind(presenterInstance).to(LoginUseCase.Presenter.class);
                 bind(presenterInstance).to(RegisterUseCase.Presenter.class);
                 bind(presenterInstance).to(GetMeUseCase.Presenter.class);
+                bind(presenterInstance).to(AuthUseCase.Presenter.class);
             }
         });
         return config;

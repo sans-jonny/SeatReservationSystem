@@ -406,8 +406,8 @@ package org.cleancoders.userandauth.usecase;
 import org.cleancoders.userandauth.domain.User;
 import org.cleancoders.userandauth.domain.UserRole;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -588,8 +588,8 @@ package org.cleancoders.userandauth.usecase;
 import jakarta.inject.Inject;
 import org.cleancoders.userandauth.domain.User;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
 
 public class LoginUseCase {
 
@@ -824,7 +824,7 @@ class JjwtTokenServiceTest {
 package org.cleancoders.infrastructure.persistence;
 
 import org.cleancoders.userandauth.domain.User;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.common.outbound.UserRepository;
 
 import java.util.Map;
 import java.util.Optional;
@@ -896,7 +896,7 @@ package org.cleancoders.infrastructure.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.cleancoders.userandauth.outbound.TokenService;
+import outbound.TokenService;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -1316,8 +1316,8 @@ import org.cleancoders.infrastructure.persistence.InMemoryUserRepo;
 import org.cleancoders.infrastructure.security.BCryptPasswordEncoder;
 import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -1424,8 +1424,8 @@ import org.cleancoders.infrastructure.security.JjwtTokenService;
 import org.cleancoders.userandauth.domain.User;
 import org.cleancoders.userandauth.domain.UserRole;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import outbound.TokenService;
+import org.cleancoders.common.outbound.UserRepository;
 import org.cleancoders.userandauth.usecase.LoginUseCase;
 import org.cleancoders.web.filter.CorsFilter;
 import org.cleancoders.web.presenter.WebApiAuthPresenter;

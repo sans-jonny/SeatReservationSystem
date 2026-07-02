@@ -4,7 +4,7 @@ import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.common.outbound.UserRepository;
 
 public class RegisterUseCase
 {

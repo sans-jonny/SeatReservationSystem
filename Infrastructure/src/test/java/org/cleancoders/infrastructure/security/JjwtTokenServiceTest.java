@@ -20,7 +20,7 @@ class JjwtTokenServiceTest
     @Test
     void shouldGenerateNonEmptyToken()
     {
-        String token = service.generate("u1", "alice", "STUDENT");
+        String token = service.generate("u1");
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
@@ -28,7 +28,7 @@ class JjwtTokenServiceTest
     @Test
     void shouldGenerateTokenWithThreeDotSegments()
     {
-        String token = service.generate("u1", "alice", "STUDENT");
+        String token = service.generate("u1");
         String[] parts = token.split("\\.");
         assertEquals(3, parts.length, "JWT should have header.payload.signature");
     }
@@ -36,15 +36,15 @@ class JjwtTokenServiceTest
     @Test
     void shouldGenerateDifferentTokensForDifferentUsers()
     {
-        String t1 = service.generate("u1", "alice", "STUDENT");
-        String t2 = service.generate("u2", "bob", "ADMIN");
+        String t1 = service.generate("u1");
+        String t2 = service.generate("u2");
         assertNotEquals(t1, t2);
     }
 
     @Test
     void shouldGenerateValidTokenWithCorrectClaims()
     {
-        String token = service.generate("u1", "alice", "STUDENT");
+        String token = service.generate("u1");
 
         Claims claims = Jwts.parser()
                 .verifyWith(key)
@@ -53,8 +53,6 @@ class JjwtTokenServiceTest
                 .getPayload();
 
         assertEquals("u1", claims.getSubject());
-        assertEquals("alice", claims.get("username"));
-        assertEquals("STUDENT", claims.get("role"));
         assertNotNull(claims.getIssuedAt());
         assertNotNull(claims.getExpiration());
         assertTrue(claims.getExpiration().after(claims.getIssuedAt()));

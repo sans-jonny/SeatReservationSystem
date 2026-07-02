@@ -2,14 +2,14 @@ package org.cleancoders.reservation.usecase;
 
 import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
+import org.cleancoders.common.usecase.AuthUseCase;
+import org.cleancoders.common.usecase.StudentAuthUseCase;
+import org.cleancoders.common_reservation_seatAndRoom.domain.SeatStatus;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
+import org.cleancoders.common_reservation_seatAndRoom.outbound.TimeSlotRepository;
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;
 import org.cleancoders.reservation.outbound.ReservationRepository;
-import org.cleancoders.seatandroom.domain.SeatStatus;
-import org.cleancoders.seatandroom.outbound.SeatRepository;
-import org.cleancoders.seatandroom.outbound.TimeSlotRepository;
-import org.cleancoders.userandauth.usecase.AuthUseCase;
-import org.cleancoders.userandauth.usecase.StudentAuthUseCase;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -29,58 +29,16 @@ import java.util.Set;
 public class ReserveUseCase extends StudentAuthUseCase<ReserveUseCase.Request, ReserveUseCase.Output>
 {
 
-    @Inject
-    Presenter presenter;
-
-    @Inject
-    ReservationRepository reservationRepo;
-
-    @Inject
-    SeatRepository seatRepo;
-
-    @Inject
-    TimeSlotRepository timeSlotRepo;
-
     private static final Set<ReservationStatus> ACTIVE_STATUSES =
             Set.of(ReservationStatus.RESERVED, ReservationStatus.CHECKED_IN);
-
-    // --- Presenter ---
-
-    /**
-     * Presenter interface for UC-08 output branches.
-     * Extends {@link StudentAuthUseCase.StudentPresenter} to inherit auth error branches.
-     */
-    public interface Presenter extends StudentAuthUseCase.StudentPresenter
-    {
-        void success(String reservationId, String seatNumber, String timeSlot);
-
-        void seatNotAvailable(String seatId, String timeSlot);
-
-        void duplicateReservation(String existingId);
-
-        void timeSlotNotFound(String timeSlotId);
-
-        void seatNotFound(String seatId);
-    }
-
-    @Override
-    protected StudentPresenter getPresenter()
-    {
-        return presenter;
-    }
-
-    // --- Request / Output ---
-
-    public record Request(String token, String seatId, String timeSlotId, LocalDate date)
-            implements AuthUseCase.AuthRequest
-    {
-    }
-
-    public record Output(String reservationId)
-    {
-    }
-
-    // --- Business Logic ---
+    @Inject
+    Presenter presenter;
+    @Inject
+    ReservationRepository reservationRepo;
+    @Inject
+    SeatRepository seatRepo;
+    @Inject
+    TimeSlotRepository timeSlotRepo;
 
     @Override
     protected Output doExecute(User user, Request req)
@@ -135,5 +93,35 @@ public class ReserveUseCase extends StudentAuthUseCase<ReserveUseCase.Request, R
         // 7. Present success
         presenter.success(saved.id(), seat.seatNumber(), timeSlot.get().label());
         return new Output(saved.id());
+    }
+
+    // --- Request / Output ---
+
+    /**
+     * Presenter interface for UC-08 output branches.
+     * Extends {@link StudentAuthUseCase.Presenter} to inherit auth error branches.
+     */
+    public interface Presenter
+    {
+        void success(String reservationId, String seatNumber, String timeSlot);
+
+        void seatNotAvailable(String seatId, String timeSlot);
+
+        void duplicateReservation(String existingId);
+
+        void timeSlotNotFound(String timeSlotId);
+
+        void seatNotFound(String seatId);
+    }
+
+    public record Request(String token, String seatId, String timeSlotId, LocalDate date)
+            implements AuthUseCase.Request
+    {
+    }
+
+    // --- Business Logic ---
+
+    public record Output(String reservationId)
+    {
     }
 }

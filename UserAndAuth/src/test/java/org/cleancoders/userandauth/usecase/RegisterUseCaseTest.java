@@ -2,12 +2,11 @@ package org.cleancoders.userandauth.usecase;
 
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.domain.UserRole;
+import org.cleancoders.common_test_infrastructure.StubUserRepo;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,32 +65,6 @@ class RegisterUseCaseTest
 
         assertNotNull(presenter.successUser.get());
         assertNotEquals("mypassword", presenter.successUser.get().password());
-    }
-
-    static class StubUserRepo implements UserRepository
-    {
-        private final java.util.Map<String, User> users = new java.util.HashMap<>();
-
-        @Override
-        public Optional<User> findByUsername(String username)
-        {
-            return Optional.ofNullable(users.get(username));
-        }
-
-        @Override
-        public Optional<User> findById(String id)
-        {
-            return users.values().stream().filter(u -> u.id().equals(id)).findFirst();
-        }
-
-        @Override
-        public User save(User user)
-        {
-            String id = user.id() != null ? user.id() : "generated-id";
-            User saved = new User(id, user.username(), user.password(), user.role(), user.name(), user.email());
-            users.put(saved.username(), saved);
-            return saved;
-        }
     }
 
     static class StubPasswordEncoder implements PasswordEncoder

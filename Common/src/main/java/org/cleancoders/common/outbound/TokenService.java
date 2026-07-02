@@ -2,7 +2,7 @@ package org.cleancoders.common.outbound;
 
 public interface TokenService
 {
-    String generate(String userId, String username, String role);
+    String generate(String userId);
 
     /**
      * Validates the JWT token and extracts the payload claims.

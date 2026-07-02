@@ -97,28 +97,6 @@ class WebApiReservationPresenterTest {
         assertEquals("权限不足，仅学生可创建预约", entity.error());
     }
 
-    @Test
-    void invalidTokenShouldReturn401() {
-        presenter.invalidToken();
-
-        Response response = presenter.getResponse();
-        assertEquals(401, response.getStatus());
-
-        ErrorResponse entity = (ErrorResponse) response.getEntity();
-        assertEquals("Invalid or expired token", entity.error());
-    }
-
-    @Test
-    void userNotFoundShouldReturn404() {
-        presenter.userNotFound();
-
-        Response response = presenter.getResponse();
-        assertEquals(404, response.getStatus());
-
-        ErrorResponse entity = (ErrorResponse) response.getEntity();
-        assertEquals("User not found", entity.error());
-    }
-
     // --- CheckInUseCase.Presenter ---
 
     @Test

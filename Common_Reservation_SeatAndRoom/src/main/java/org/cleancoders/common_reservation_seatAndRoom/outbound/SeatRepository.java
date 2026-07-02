@@ -1,6 +1,6 @@
-package outbound;
+package org.cleancoders.common_reservation_seatAndRoom.outbound;
 
-import domain.Seat;
+import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
 
 import java.util.List;
 import java.util.Optional;

@@ -2,9 +2,9 @@ package org.cleancoders.userandauth.usecase;
 
 import jakarta.inject.Inject;
 import org.cleancoders.common.domain.User;
+import org.cleancoders.common.outbound.TokenService;
 import org.cleancoders.userandauth.outbound.PasswordEncoder;
-import org.cleancoders.userandauth.outbound.TokenService;
-import org.cleancoders.userandauth.outbound.UserRepository;
+import org.cleancoders.common.outbound.UserRepository;
 
 public class LoginUseCase
 {
@@ -34,7 +34,7 @@ public class LoginUseCase
             return null;
         }
 
-        String token = tokenService.generate(u.id(), u.username(), u.role().name());
+        String token = tokenService.generate(u.id());
         presenter.success(token, u);
         return new Output(token);
     }

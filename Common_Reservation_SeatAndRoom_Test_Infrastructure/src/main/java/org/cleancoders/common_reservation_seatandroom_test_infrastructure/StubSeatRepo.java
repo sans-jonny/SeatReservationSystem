@@ -1,4 +1,4 @@
-package org.cleancoders.reservation.usecase;
+package org.cleancoders.common_reservation_seatandroom_test_infrastructure;
 
 import org.cleancoders.common_reservation_seatAndRoom.domain.Seat;
 import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
@@ -6,11 +6,11 @@ import org.cleancoders.common_reservation_seatAndRoom.outbound.SeatRepository;
 import java.util.List;
 import java.util.Optional;
 
-class StubSeatRepo implements SeatRepository
+public class StubSeatRepo implements SeatRepository
 {
     private final java.util.Map<String, Seat> seats = new java.util.HashMap<>();
 
-    void addSeat(Seat seat)
+    public void addSeat(Seat seat)
     {
         seats.put(seat.id(), seat);
     }

@@ -1,4 +1,4 @@
-package org.cleancoders.seatandroom.domain;
+package org.cleancoders.common_reservation_seatAndRoom.domain;
 
 /**
  * Represents the operational status of a seat.

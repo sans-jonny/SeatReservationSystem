@@ -1,4 +1,4 @@
-package org.cleancoders.common_reservation_seatandroom_test_infrastructure;
+package org.cleancoders.reservation.usecase;
 
 import org.cleancoders.reservation.domain.Reservation;
 import org.cleancoders.reservation.domain.ReservationStatus;

@@ -1,15 +1,15 @@
-package org.cleancoders.reservation.usecase;
+package org.cleancoders.common_test_infrastructure;
 
 import org.cleancoders.common.domain.User;
 import org.cleancoders.common.outbound.UserRepository;
 
 import java.util.Optional;
 
-class StubUserRepo implements UserRepository
+public class StubUserRepo implements UserRepository
 {
     private final java.util.Map<String, User> users = new java.util.HashMap<>();
 
-    void addUser(User user)
+    public void addUser(User user)
     {
         users.put(user.id(), user);
     }
@@ -31,7 +31,9 @@ class StubUserRepo implements UserRepository
     @Override
     public User save(User user)
     {
-        users.put(user.id(), user);
-        return user;
+        String id = user.id() != null ? user.id() : "generated-id";
+        User saved = new User(id, user.username(), user.password(), user.role(), user.name(), user.email());
+        users.put(saved.username(), saved);
+        return saved;
     }
 }
